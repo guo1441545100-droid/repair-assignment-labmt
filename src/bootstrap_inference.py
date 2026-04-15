@@ -6,7 +6,7 @@ Step 4: inferential comparisons, all word-level, all bootstrap.
 The unit of analysis is a single labMT word. The score attached to that
 word is `happiness_average`. The four groups are the four source corpora
 (Twitter, Google Books, NYT, song lyrics). A single word can belong to
-more than one group — this is intrinsic to labMT 1.0, and the analyses
+more than one group, this is intrinsic to labMT 1.0, and the analyses
 below account for it differently in each of three comparisons.
 
 Comparison 1: pairwise difference in mean happiness between corpora.
@@ -26,7 +26,7 @@ Comparison 2: frequency bucket × corpus.
     compute the bootstrap difference in mean happiness between the
     top bucket and the bottom bucket. This tests whether a more
     frequent word in a given corpus is systematically closer to
-    neutrality — the "neutral common word" effect that Dodds
+    neutrality, the "neutral common word" effect that Dodds
     discusses in the 2015 positivity paper.
 
 Comparison 3: corpus-exclusive vs universal words.
@@ -101,7 +101,7 @@ def boot_mean(x: np.ndarray) -> tuple[float, float, float]:
 
 
 # -----------------------------------------------------------------------------
-# Comparison 1 — pairwise corpus difference (filtered happiness)
+# Comparison 1, pairwise corpus difference (filtered happiness)
 # -----------------------------------------------------------------------------
 
 def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -141,7 +141,7 @@ def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     ax.axvline(0, color="red", linestyle="--", linewidth=1)
     ax.set_yticks(ypos, [r["comparison"] for r in rows])
     ax.set_xlabel("Difference in mean happiness (A − B), filtered (Δh=1)")
-    ax.set_title("Comparison 1 — pairwise corpus differences")
+    ax.set_title("Comparison 1, pairwise corpus differences")
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_1.png", dpi=200)
     plt.close()
@@ -149,7 +149,7 @@ def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
 
 # -----------------------------------------------------------------------------
-# Comparison 2 — frequency bucket within each corpus
+# Comparison 2, frequency bucket within each corpus
 # -----------------------------------------------------------------------------
 
 def comparison_2(df: pd.DataFrame) -> pd.DataFrame:
@@ -190,7 +190,7 @@ def comparison_2(df: pd.DataFrame) -> pd.DataFrame:
     ax.set_xticks(xpos, [r["corpus"] for r in rows])
     ax.set_ylabel("mean(top-1000) − mean(bottom-1000)\n"
                   "(happiness, filtered Δh=1)")
-    ax.set_title("Comparison 2 — top- vs bottom-ranked words per corpus")
+    ax.set_title("Comparison 2, top- vs bottom-ranked words per corpus")
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_2.png", dpi=200)
     plt.close()
@@ -198,7 +198,7 @@ def comparison_2(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # -----------------------------------------------------------------------------
-# Comparison 3 — overlap-bucket means
+# Comparison 3, overlap-bucket means
 # -----------------------------------------------------------------------------
 
 def comparison_3(df: pd.DataFrame) -> pd.DataFrame:
@@ -236,7 +236,7 @@ def comparison_3(df: pd.DataFrame) -> pd.DataFrame:
     ax.set_xticks(xpos, [str(r["n_corpora"]) for r in rows])
     ax.set_xlabel("n_corpora (1 = exclusive to one corpus, 4 = universal)")
     ax.set_ylabel("mean happiness (filtered Δh=1)")
-    ax.set_title("Comparison 3 — exclusive vs shared words")
+    ax.set_title("Comparison 3, exclusive vs shared words")
     ax.legend()
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_3.png", dpi=200)
@@ -254,7 +254,7 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
              "Values produced by bootstrap_inference.py. Copy these into",
              "the [[...]] placeholders in README.md §6.",
              ""]
-    lines.append("## Comparison 1 — pairwise corpus differences (filtered)")
+    lines.append("## Comparison 1, pairwise corpus differences (filtered)")
     for _, r in c1.iterrows():
         lines.append(
             f"- {r['comparison']}: diff = {r['observed_diff']:+.4f}, "
@@ -263,7 +263,7 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
             f"prob>0 = {r['prob_diff_positive']:.3f}"
         )
     lines.append("")
-    lines.append("## Comparison 2 — top-1000 minus bottom-1000 per corpus (filtered)")
+    lines.append("## Comparison 2, top-1000 minus bottom-1000 per corpus (filtered)")
     for _, r in c2.iterrows():
         lines.append(
             f"- {r['corpus']}: diff = {r['observed_diff']:+.4f}, "
@@ -271,7 +271,7 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
             f"n_top = {int(r['n_top1000'])}, n_bot = {int(r['n_bottom1000'])}"
         )
     lines.append("")
-    lines.append("## Comparison 3 — mean happiness by n_corpora (filtered)")
+    lines.append("## Comparison 3, mean happiness by n_corpora (filtered)")
     for _, r in c3.iterrows():
         lines.append(
             f"- n_corpora = {int(r['n_corpora'])}: "

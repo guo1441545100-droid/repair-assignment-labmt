@@ -46,6 +46,6 @@ treats as NaN via `na_values=["--"]`.
 
 ## Citation
 
-Please cite Dodds et al. (2011) — see the full reference above — if
+Please cite Dodds et al. (2011), see the full reference above, if
 you use this file for anything beyond reproducing the repair
 assignment.

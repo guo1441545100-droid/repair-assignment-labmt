@@ -4,7 +4,7 @@ fetch_data.py
 Checks that the one raw input this project needs is present under
 data/raw/:
 
-    Data_Set_S1.txt  — labMT 1.0 lexicon, from the supporting
+    Data_Set_S1.txt , labMT 1.0 lexicon, from the supporting
                        information of Dodds et al. (2011), PLoS ONE.
 
 The whole repair assignment uses only this one file. If it is missing,

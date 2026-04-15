@@ -4,8 +4,8 @@ robustness.py
 Step 5: sensitivity checks on Comparison 1 (pairwise corpus differences).
 
 The point is not to produce a new finding, it is to show that the main
-claim — that the four labMT source corpora differ in mean word
-happiness — does not hinge on a single operational choice. I re-run the
+claim, that the four labMT source corpora differ in mean word
+happiness, does not hinge on a single operational choice. I re-run the
 six pairwise bootstrap differences from Comparison 1 under four
 conditions and plot them side by side:
 
@@ -90,7 +90,7 @@ def cond_C_half_filter(df: pd.DataFrame) -> list[dict]:
 
 
 def cond_D_drop_high_sd(df: pd.DataFrame) -> list[dict]:
-    # "contested" words — where the 50 raters disagreed a lot. I drop
+    # "contested" words, where the 50 raters disagreed a lot. I drop
     # them to see whether those words are driving the corpus means.
     mask = (
         ((df["happiness_average"] - 5.0).abs() > 1.0)

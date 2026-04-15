@@ -18,14 +18,14 @@ Outputs:
 
 The four labMT source corpora each contain at most 5,000 words by
 design (this is how Dodds et al. 2011 built the union lexicon), so
-"coverage" in the group-project sense is uninteresting here — every
+"coverage" in the group-project sense is uninteresting here, every
 corpus always has 5,000 entries. What IS interesting descriptively is:
 
     - the overall shape of happiness_average;
     - how each corpus's word set compares in mean / median / spread;
     - the pattern of overlap between corpora (how many words are
       shared, which pairs overlap most);
-    - the scatter of rank against happiness inside each corpus — does
+    - the scatter of rank against happiness inside each corpus, does
       a more frequent word tend to be more or less neutral?
 """
 
