@@ -101,6 +101,40 @@ def boot_mean(x: np.ndarray) -> tuple[float, float, float]:
     return float(x.mean()), float(np.percentile(boot, 2.5)), float(np.percentile(boot, 97.5))
 
 
+def boot_mean_samples(x: np.ndarray) -> np.ndarray:
+    """Return the raw N_BOOT resampled means, for density plotting."""
+    if x.size == 0:
+        return np.array([])
+    boot = np.empty(N_BOOT)
+    for i in range(N_BOOT):
+        boot[i] = RNG.choice(x, size=x.size, replace=True).mean()
+    return boot
+
+
+def gaussian_kde_1d(samples: np.ndarray, grid: np.ndarray,
+                    bw: float | None = None) -> np.ndarray:
+    """
+    Minimal 1-D Gaussian KDE evaluated on `grid`. Silverman's rule for
+    bandwidth if `bw` is not given. No scipy dependency.
+    """
+    s = np.asarray(samples, dtype=float)
+    n = s.size
+    if n == 0:
+        return np.zeros_like(grid)
+    if bw is None:
+        sd = float(s.std(ddof=1)) if n > 1 else 1.0
+        bw = max(1.06 * sd * n ** (-0.2), 1e-6)
+    # evaluate in chunks to keep memory modest
+    out = np.zeros_like(grid, dtype=float)
+    chunk = 1024
+    coef = 1.0 / (np.sqrt(2.0 * np.pi) * bw * n)
+    for start in range(0, n, chunk):
+        block = s[start:start + chunk]
+        diff = (grid[:, None] - block[None, :]) / bw
+        out += np.exp(-0.5 * diff * diff).sum(axis=1)
+    return out * coef
+
+
 # -----------------------------------------------------------------------------
 # Comparison 1, era pairwise
 # -----------------------------------------------------------------------------
@@ -270,11 +304,153 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
     print(f"[save] {TAB / 'readme_fill_in.md'}")
 
 
+# -----------------------------------------------------------------------------
+# Bootstrap density plots. This is the "analytical" panel set: one histogram
+# plus KDE curve per stratum / contrast, so the reader can see the full
+# bootstrap distribution and not just a CI bar. Six panels total:
+#
+#   1. Per-era means (3 overlapping KDEs)         -> C3
+#   2. Written vs spoken means (2 overlapping)    -> C2
+#   3. Difference Industrial - Broadcast          -> C1, the robust claim
+#   4. Difference Founding - Broadcast            -> C1, the borderline
+#   5. Difference Founding - Industrial           -> C1, the noise case
+#   6. Per-era difference sampling, all 3 pairs overlaid
+# -----------------------------------------------------------------------------
+
+ERA_HIST_COLOR = {
+    "Founding":   "#4C72B0",
+    "Industrial": "#DD8452",
+    "Broadcast":  "#55A868",
+}
+
+
+def _draw_hist_kde(ax, samples: np.ndarray, color: str, label: str,
+                   bins: int = 50) -> None:
+    if samples.size == 0:
+        return
+    counts, edges = np.histogram(samples, bins=bins, density=True)
+    ax.hist(samples, bins=edges, density=True, color=color,
+            alpha=0.35, edgecolor=color, linewidth=0.4)
+    pad = (edges[-1] - edges[0]) * 0.1
+    grid = np.linspace(edges[0] - pad, edges[-1] + pad, 400)
+    dens = gaussian_kde_1d(samples, grid)
+    ax.plot(grid, dens, color=color, linewidth=2.0, label=label)
+
+
+def density_plots(df: pd.DataFrame) -> None:
+    print("\n== Bootstrap density plots ==")
+
+    # Precompute the per-era mean samples (used twice: panel 1 and panel 6)
+    era_samples: dict[str, np.ndarray] = {}
+    for era in ERA_ORDER:
+        x = df.loc[df["era"] == era, "happiness_weighted"].dropna().to_numpy()
+        era_samples[era] = boot_mean_samples(x)
+
+    # --- 1. Per-era means, 3 overlapping KDEs -----------------------------
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    for era in ERA_ORDER:
+        s = era_samples[era]
+        lo, hi = np.percentile(s, [2.5, 97.5])
+        _draw_hist_kde(
+            ax, s, ERA_HIST_COLOR[era],
+            label=f"{era}  mean={s.mean():.3f}  CI=[{lo:.3f}, {hi:.3f}]")
+    ax.set_xlabel("bootstrapped mean happiness_weighted")
+    ax.set_ylabel("density")
+    ax.set_title("Bootstrap distributions of per-era means\n"
+                 "(C3: 10,000 resamples per era)")
+    ax.legend(fontsize=8, loc="upper left")
+    plt.tight_layout()
+    plt.savefig(FIG / "density_era_means.png", dpi=200)
+    plt.close()
+
+    # --- 2. Written vs spoken means ---------------------------------------
+    xw = df.loc[df["modality"] == "written", "happiness_weighted"].dropna().to_numpy()
+    xs = df.loc[df["modality"] == "spoken", "happiness_weighted"].dropna().to_numpy()
+    sw = boot_mean_samples(xw)
+    ss = boot_mean_samples(xs)
+
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    for s, color, label, raw in [
+        (sw, "#4C72B0", "written (≤1912)", xw),
+        (ss, "#C44E52", "spoken (≥1913)", xs),
+    ]:
+        lo, hi = np.percentile(s, [2.5, 97.5])
+        _draw_hist_kde(
+            ax, s, color,
+            label=f"{label}  n={raw.size}  mean={s.mean():.3f}  "
+                  f"CI=[{lo:.3f}, {hi:.3f}]")
+    ax.set_xlabel("bootstrapped mean happiness_weighted")
+    ax.set_ylabel("density")
+    ax.set_title("C2: bootstrap distributions of written vs spoken means")
+    ax.legend(fontsize=8, loc="upper left")
+    plt.tight_layout()
+    plt.savefig(FIG / "density_written_vs_spoken.png", dpi=200)
+    plt.close()
+
+    # --- 3, 4, 5. Difference distributions for each era pair ---------------
+    diff_panels = [
+        ("Industrial", "Broadcast", "density_diff_industrial_broadcast.png",
+         "C1a: Industrial − Broadcast\n(the robust claim)"),
+        ("Founding", "Broadcast", "density_diff_founding_broadcast.png",
+         "C1b: Founding − Broadcast\n(borderline, half coverage artefact)"),
+        ("Founding", "Industrial", "density_diff_founding_industrial.png",
+         "C1c: Founding − Industrial\n(noise, CI straddles zero)"),
+    ]
+    diff_samples: dict[str, np.ndarray] = {}
+    for a, b, fname, title in diff_panels:
+        xa = df.loc[df["era"] == a, "happiness_weighted"].dropna().to_numpy()
+        xb = df.loc[df["era"] == b, "happiness_weighted"].dropna().to_numpy()
+        boot, obs, lo, hi, pp = boot_diff(xa, xb)
+        diff_samples[f"{a}-{b}"] = boot
+
+        fig, ax = plt.subplots(figsize=(8, 4.6))
+        _draw_hist_kde(ax, boot, "#6A5ACD",
+                       label=f"{a} − {b}\nobserved = {obs:+.4f}\n"
+                             f"CI = [{lo:+.4f}, {hi:+.4f}]\n"
+                             f"P(diff > 0) = {pp:.3f}")
+        ax.axvline(0, color="red", linestyle="--", linewidth=1.2,
+                   label="zero (no difference)")
+        ax.axvline(obs, color="black", linestyle=":", linewidth=1.0,
+                   label=f"observed {obs:+.4f}")
+        ax.set_xlabel("bootstrapped difference in mean happiness_weighted")
+        ax.set_ylabel("density")
+        ax.set_title(title)
+        ax.legend(fontsize=8, loc="upper right")
+        plt.tight_layout()
+        plt.savefig(FIG / fname, dpi=200)
+        plt.close()
+
+    # --- 6. All three C1 difference distributions overlaid ----------------
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    palette = [("Industrial-Broadcast", "#55A868"),
+               ("Founding-Broadcast",   "#4C72B0"),
+               ("Founding-Industrial",  "#DD8452")]
+    for key, color in palette:
+        s = diff_samples[key]
+        lo, hi = np.percentile(s, [2.5, 97.5])
+        pp = float((s > 0).mean())
+        _draw_hist_kde(
+            ax, s, color,
+            label=f"{key.replace('-', ' − ')}  "
+                  f"CI=[{lo:+.3f}, {hi:+.3f}]  P>0={pp:.2f}")
+    ax.axvline(0, color="red", linestyle="--", linewidth=1.2)
+    ax.set_xlabel("bootstrapped difference in mean happiness_weighted (A − B)")
+    ax.set_ylabel("density")
+    ax.set_title("C1 overview: all three era-pair difference distributions")
+    ax.legend(fontsize=8, loc="upper left")
+    plt.tight_layout()
+    plt.savefig(FIG / "density_c1_all_pairs.png", dpi=200)
+    plt.close()
+
+    print("[save] 6 density plots under figures/density_*.png")
+
+
 def main() -> None:
     df = pd.read_csv(IN)
     c1 = comparison_1(df)
     c2 = comparison_2(df)
     c3 = comparison_3(df)
+    density_plots(df)
     dump_fill_in(c1, c2, c3)
 
 

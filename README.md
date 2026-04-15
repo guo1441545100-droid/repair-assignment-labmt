@@ -159,7 +159,17 @@ Reading:
 - **Broadcast is higher than the other two**, clearly so vs Industrial (CI excludes 0, P(diff > 0) ≈ 0) and less clearly so vs Founding (CI excludes 0 but only barely, P(diff > 0) ≈ 0.008).
 - **Founding and Industrial are indistinguishable** under the primary analysis. The CI straddles zero and the point estimate is tiny (+0.02, SD ≈ 0.11).
 
-One sentence version: the headline effect is not a three-level gradient, it is a **Broadcast-era bump**. The first 155 years of the presidency look statistically flat on this measure and then post-1946 addresses sit noticeably higher. See `figures/bootstrap_comparison_1.png`.
+One sentence version: the headline effect is not a three-level gradient, it is a **Broadcast-era bump**. The first 155 years of the presidency look statistically flat on this measure and then post-1946 addresses sit noticeably higher.
+
+Because a 95% CI bar gives a reader almost no information about the **shape** of the bootstrap distribution (how certain, how skewed, how much overlap between strata), I also plot the full distribution of the 10,000 resampled statistics for each comparison. See `figures/bootstrap_comparison_1.png` for the forest view and the four panels below for the analytical view.
+
+**`figures/density_c1_all_pairs.png`** overlays the three C1 difference distributions on a single axis. Industrial − Broadcast (green) sits cleanly left of the red zero line, Founding − Broadcast (blue) sits mostly left of zero but with its right tail touching it, and Founding − Industrial (orange) is centred near zero. This is the "one picture of the whole C1 result" panel.
+
+**`figures/density_diff_industrial_broadcast.png`** is the Industrial − Broadcast contrast alone. The distribution is smooth, roughly symmetric, and zero is clearly in the right tail. P(diff > 0) ≈ 0.0001, which is the number I trust most in this repair.
+
+**`figures/density_diff_founding_broadcast.png`** is the borderline case. The distribution sits left of zero but the right tail clips zero, which matches the CI upper bound of −0.008. Under the primary analysis this is a signal; under condition D in §6 it dissolves.
+
+**`figures/density_diff_founding_industrial.png`** is the negative result, and the shape makes the point better than the CI does. The distribution straddles zero symmetrically, with the observed value (+0.021) sitting well inside the bulk. No amount of narrative can make this a finding.
 
 ### 5.2 Comparison 2, written vs spoken
 
@@ -169,7 +179,9 @@ One sentence version: the headline effect is not a three-level gradient, it is a
 | --- | --- | --- | --- | --- | --- | --- |
 | 124 | 109 | 5.9835 | 5.9989 | **−0.0154** | [−0.0441, +0.0140] | 0.152 |
 
-Written and spoken addresses are statistically indistinguishable. This is the point at which the obvious alternative explanation for the C1 effect ("maybe the Broadcast bump is really a delivery-mode bump") is ruled out: the Wilson-era 1913 cut does not track the effect. Whatever is happening is happening 33 years later and is not about pronunciation. See `figures/bootstrap_comparison_2.png`.
+Written and spoken addresses are statistically indistinguishable. This is the point at which the obvious alternative explanation for the C1 effect ("maybe the Broadcast bump is really a delivery-mode bump") is ruled out: the Wilson-era 1913 cut does not track the effect. Whatever is happening is happening 33 years later and is not about pronunciation.
+
+**`figures/density_written_vs_spoken.png`** overlays the two bootstrapped mean distributions. The written and spoken KDEs sit almost on top of each other, which is the visual form of "indistinguishable." Compare against `figures/density_era_means.png` below, where the Broadcast KDE clearly peels off from the other two — that is what a real contrast looks like in this same plotting format, and the written/spoken contrast does not look like it.
 
 ### 5.3 Comparison 3, per-era mean happiness with CI
 
@@ -181,7 +193,9 @@ Written and spoken addresses are statistically indistinguishable. This is the po
 | Industrial | 84 | 5.9622 | [5.9413, 5.9824] |
 | Broadcast  | 77 | 6.0288 | [6.0034, 6.0531] |
 
-The three CIs overlap partially but Broadcast sits cleanly above Industrial. On the 1–9 labMT scale, the full range across the corpus means is about 0.07, which is small in absolute terms and large relative to the within-era SDs. See `figures/bootstrap_comparison_3.png`.
+The three CIs overlap partially but Broadcast sits cleanly above Industrial. On the 1–9 labMT scale, the full range across the corpus means is about 0.07, which is small in absolute terms and large relative to the within-era SDs.
+
+**`figures/density_era_means.png`** plots the full bootstrap distribution of the mean for each era on a single axis, using a histogram plus a Silverman-bandwidth Gaussian KDE per stratum. Founding (blue) and Industrial (orange) overlap almost completely. Broadcast (green) is shifted right, with only its left shoulder touching the Founding/Industrial bulk. This is the same story the CI table tells, but in the form the reference high-scoring projects use: the width of each bell is the uncertainty on that era's mean, and the overlap between bells is the strength of the contrast. The Broadcast bell does not overlap the Industrial bell at all in the central mass, which is what "robustly different" actually looks like on this plot style.
 
 ---
 
