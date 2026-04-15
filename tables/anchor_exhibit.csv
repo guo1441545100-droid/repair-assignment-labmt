@@ -1,21 +1,21 @@
-category,word,happiness,std,n_corpora
-"very positive (h ≥ 7.5, low SD)",laughter,8.5,0.931,2
-"very positive (h ≥ 7.5, low SD)",happiness,8.44,0.972,3
-"very positive (h ≥ 7.5, low SD)",love,8.42,1.108,4
-"very positive (h ≥ 7.5, low SD)",happy,8.3,0.995,4
-"very positive (h ≥ 7.5, low SD)",laughed,8.26,1.157,3
-"very negative (h ≤ 2.5, low SD)",terrorist,1.3,0.909,2
-"very negative (h ≤ 2.5, low SD)",suicide,1.3,0.839,4
-"very negative (h ≤ 2.5, low SD)",rape,1.44,0.787,3
-"very negative (h ≤ 2.5, low SD)",terrorism,1.48,0.909,1
-"very negative (h ≤ 2.5, low SD)",murder,1.48,1.015,4
-contested (std ≥ 2.3),fucking,4.64,2.926,2
-contested (std ≥ 2.3),fuckin,3.86,2.74,2
-contested (std ≥ 2.3),fucked,3.56,2.712,2
-contested (std ≥ 2.3),pussy,4.8,2.665,2
-contested (std ≥ 2.3),whiskey,5.72,2.642,1
-near-neutral (|h − 5| ≤ 0.2),ainda,4.92,0.396,1
-near-neutral (|h − 5| ≤ 0.2),s,5.04,0.493,4
-near-neutral (|h − 5| ≤ 0.2),maar,4.9,0.505,2
-near-neutral (|h − 5| ≤ 0.2),sua,4.92,0.528,1
-near-neutral (|h − 5| ≤ 0.2),its,4.96,0.533,4
+category,word,happiness,std
+"very positive (h >= 7.5, low SD)",laughter,8.5,0.931
+"very positive (h >= 7.5, low SD)",happiness,8.44,0.972
+"very positive (h >= 7.5, low SD)",love,8.42,1.108
+"very positive (h >= 7.5, low SD)",happy,8.3,0.995
+"very positive (h >= 7.5, low SD)",laughed,8.26,1.157
+"very negative (h <= 2.5, low SD)",terrorist,1.3,0.909
+"very negative (h <= 2.5, low SD)",suicide,1.3,0.839
+"very negative (h <= 2.5, low SD)",rape,1.44,0.787
+"very negative (h <= 2.5, low SD)",terrorism,1.48,0.909
+"very negative (h <= 2.5, low SD)",murder,1.48,1.015
+contested (std >= 2.3),fucking,4.64,2.926
+contested (std >= 2.3),fuckin,3.86,2.74
+contested (std >= 2.3),fucked,3.56,2.712
+contested (std >= 2.3),pussy,4.8,2.665
+contested (std >= 2.3),whiskey,5.72,2.642
+near-neutral (|h-5| <= 0.2),ainda,4.92,0.396
+near-neutral (|h-5| <= 0.2),s,5.04,0.493
+near-neutral (|h-5| <= 0.2),maar,4.9,0.505
+near-neutral (|h-5| <= 0.2),sua,4.92,0.528
+near-neutral (|h-5| <= 0.2),its,4.96,0.533

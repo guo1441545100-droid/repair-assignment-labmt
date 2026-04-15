@@ -1,35 +1,33 @@
 """
 descriptive.py
 
-Step 3: descriptive statistics and distribution plots.
+Step 4: descriptive statistics and distribution plots for the SOTU
+corpus, now scored at the document level.
+
+Inputs:
+    data/processed/labmt_clean.csv   (for the labMT-side sanity panel)
+    data/processed/sotu_scored.csv   (one row per SOTU address)
 
 Outputs:
-    tables/descriptive_overall.csv
-    tables/descriptive_by_corpus.csv
-    tables/corpus_overlap_counts.csv
-    tables/pairwise_overlap.csv
-    tables/descriptive_by_n_corpora.csv
+    tables/desc_labmt_overall.csv
+    tables/desc_sotu_by_era.csv
+    tables/desc_sotu_by_modality.csv
+    tables/desc_sotu_coverage.csv
+    tables/desc_sotu_docs_per_president.csv
+    figures/labmt_hist_happiness.png
+    figures/sotu_hist_happiness_by_era.png
+    figures/sotu_scatter_year_vs_happiness.png
+    figures/sotu_coverage_hist.png
+    figures/sotu_tokens_per_doc.png
 
-    figures/hist_happiness_overall.png
-    figures/hist_happiness_by_corpus.png
-    figures/scatter_happiness_vs_std.png
-    figures/corpus_overlap_bar.png
-    figures/happiness_vs_rank_per_corpus.png
-
-The four labMT source corpora each contain at most 5,000 words by
-design (this is how Dodds et al. 2011 built the union lexicon), so
-"coverage" in the group-project sense is uninteresting here, every
-corpus always has 5,000 entries. What IS interesting descriptively is:
-
-    - the overall shape of happiness_average;
-    - how each corpus's word set compares in mean / median / spread;
-    - the pattern of overlap between corpora (how many words are
-      shared, which pairs overlap most);
-    - the scatter of rank against happiness inside each corpus, does
-      a more frequent word tend to be more or less neutral?
+The descriptive stage has two jobs in this repair. First, verify the
+instrument: labMT's own happiness distribution is shown so the reader
+can see the scoring scale before any inference happens. Second, show
+the corpus: how many documents per era, how long they are, how much of
+each document labMT actually sees, and where the per-document scores
+sit on the scale.
 """
 
-from itertools import combinations
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -43,8 +41,15 @@ TAB = ROOT / "tables"
 FIG.mkdir(exist_ok=True)
 TAB.mkdir(exist_ok=True)
 
-IN = PROC / "labmt_clean.csv"
-CORPORA = ["twitter", "google", "nyt", "lyrics"]
+LABMT_CSV = PROC / "labmt_clean.csv"
+SOTU_CSV = PROC / "sotu_scored.csv"
+
+ERA_ORDER = ["Founding", "Industrial", "Broadcast"]
+ERA_COLOR = {
+    "Founding":   "#4C72B0",
+    "Industrial": "#DD8452",
+    "Broadcast":  "#55A868",
+}
 
 
 def summary(series: pd.Series) -> pd.Series:
@@ -52,7 +57,7 @@ def summary(series: pd.Series) -> pd.Series:
     return pd.Series({
         "n": int(s.shape[0]),
         "mean": float(s.mean()),
-        "std": float(s.std(ddof=1)),
+        "std": float(s.std(ddof=1)) if s.shape[0] > 1 else float("nan"),
         "median": float(s.median()),
         "q25": float(s.quantile(0.25)),
         "q75": float(s.quantile(0.75)),
@@ -62,129 +67,133 @@ def summary(series: pd.Series) -> pd.Series:
 
 
 def main() -> None:
-    df = pd.read_csv(IN)
+    labmt = pd.read_csv(LABMT_CSV)
+    sotu = pd.read_csv(SOTU_CSV)
 
-    # ---- tables ----
-    overall = summary(df["happiness_average"]).to_frame("value").reset_index()
-    overall.columns = ["metric", "value"]
-    overall.to_csv(TAB / "descriptive_overall.csv", index=False)
+    # ---- labMT side: one-line sanity panel ----
+    labmt_overall = summary(labmt["happiness_average"]).to_frame("value").reset_index()
+    labmt_overall.columns = ["metric", "value"]
+    labmt_overall.to_csv(TAB / "desc_labmt_overall.csv", index=False)
 
-    by_corpus_rows = []
-    for c in CORPORA:
-        s = df.loc[df[f"in_{c}"], "happiness_average"]
-        row = summary(s)
-        row["corpus"] = c
-        by_corpus_rows.append(row)
-    by_corpus = pd.DataFrame(by_corpus_rows)[
-        ["corpus", "n", "mean", "std", "median", "q25", "q75", "min", "max"]
-    ]
-    by_corpus.to_csv(TAB / "descriptive_by_corpus.csv", index=False)
-
-    # words-in-N-corpora table
-    by_n_rows = []
-    for n in sorted(df["n_corpora"].unique()):
-        s = df.loc[df["n_corpora"] == n, "happiness_average"]
-        row = summary(s)
-        row["n_corpora"] = int(n)
-        by_n_rows.append(row)
-    by_n = pd.DataFrame(by_n_rows)[
-        ["n_corpora", "n", "mean", "std", "median", "q25", "q75", "min", "max"]
-    ]
-    by_n.to_csv(TAB / "descriptive_by_n_corpora.csv", index=False)
-
-    # overlap counts
-    overlap = df["n_corpora"].value_counts().sort_index().reset_index()
-    overlap.columns = ["n_corpora", "n_words"]
-    overlap.to_csv(TAB / "corpus_overlap_counts.csv", index=False)
-
-    # pairwise overlaps
-    pairs = []
-    for a, b in combinations(CORPORA, 2):
-        mask = df[f"in_{a}"] & df[f"in_{b}"]
-        pairs.append({
-            "pair": f"{a}+{b}",
-            "n_shared": int(mask.sum()),
-            "mean_happiness_shared": float(df.loc[mask, "happiness_average"].mean()),
-        })
-    pd.DataFrame(pairs).to_csv(TAB / "pairwise_overlap.csv", index=False)
-
-    # ---- figures ----
-    # 1) overall histogram
     plt.figure(figsize=(7, 4))
-    plt.hist(df["happiness_average"], bins=40)
-    plt.axvline(df["happiness_average"].mean(), linestyle="--", color="black",
-                label=f"mean = {df['happiness_average'].mean():.3f}")
-    plt.axvline(5.0, linestyle=":", color="red", label="scale midpoint (5)")
-    plt.title("labMT 1.0: distribution of happiness_average\n"
-              f"n = {len(df)} words")
+    plt.hist(labmt["happiness_average"], bins=40, color="#888888")
+    plt.axvline(labmt["happiness_average"].mean(), linestyle="--",
+                color="black",
+                label=f"mean = {labmt['happiness_average'].mean():.3f}")
+    plt.axvspan(4.0, 6.0, color="red", alpha=0.08,
+                label="neutral band |h-5|<=1")
+    plt.title(f"labMT 1.0: happiness distribution (n={len(labmt)} words)")
     plt.xlabel("happiness_average (1 = least happy, 9 = most happy)")
     plt.ylabel("word count")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(FIG / "hist_happiness_overall.png", dpi=200)
+    plt.savefig(FIG / "labmt_hist_happiness.png", dpi=200)
     plt.close()
 
-    # 2) by-corpus overlay (density so the 5000-vs-5000 comparison is fair)
-    plt.figure(figsize=(7, 4))
-    for c in CORPORA:
-        s = df.loc[df[f"in_{c}"], "happiness_average"]
-        plt.hist(s, bins=40, alpha=0.4, density=True,
-                 label=f"{c} (n={len(s)})")
-    plt.title("labMT 1.0 by source corpus: happiness density")
-    plt.xlabel("happiness_average")
+    # ---- SOTU side ----
+    by_era_rows = []
+    for era in ERA_ORDER:
+        s = sotu.loc[sotu["era"] == era, "happiness_weighted"]
+        row = summary(s)
+        row["era"] = era
+        by_era_rows.append(row)
+    by_era = pd.DataFrame(by_era_rows)[
+        ["era", "n", "mean", "std", "median", "q25", "q75", "min", "max"]
+    ]
+    by_era.to_csv(TAB / "desc_sotu_by_era.csv", index=False)
+
+    by_mod_rows = []
+    for mod in ["written", "spoken"]:
+        s = sotu.loc[sotu["modality"] == mod, "happiness_weighted"]
+        row = summary(s)
+        row["modality"] = mod
+        by_mod_rows.append(row)
+    by_mod = pd.DataFrame(by_mod_rows)[
+        ["modality", "n", "mean", "std", "median", "q25", "q75", "min", "max"]
+    ]
+    by_mod.to_csv(TAB / "desc_sotu_by_modality.csv", index=False)
+
+    cov = summary(sotu["coverage"]).to_frame("value").reset_index()
+    cov.columns = ["metric", "value"]
+    cov.to_csv(TAB / "desc_sotu_coverage.csv", index=False)
+
+    per_pres = (sotu.groupby("president", sort=False)
+                .agg(n_docs=("filename", "count"),
+                     first_year=("year", "min"),
+                     last_year=("year", "max"),
+                     mean_h=("happiness_weighted", "mean"))
+                .reset_index()
+                .sort_values("first_year"))
+    per_pres.to_csv(TAB / "desc_sotu_docs_per_president.csv", index=False)
+
+    # --- figures ---
+    # overlay histogram of weighted happiness by era
+    plt.figure(figsize=(7.5, 4.5))
+    for era in ERA_ORDER:
+        s = sotu.loc[sotu["era"] == era, "happiness_weighted"].dropna()
+        plt.hist(s, bins=25, alpha=0.5, density=True,
+                 color=ERA_COLOR[era], label=f"{era} (n={len(s)})")
+    plt.xlabel("happiness_weighted (per-document labMT score, filtered Δh=1)")
     plt.ylabel("density")
+    plt.title("SOTU happiness distribution by era")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(FIG / "hist_happiness_by_corpus.png", dpi=200)
+    plt.savefig(FIG / "sotu_hist_happiness_by_era.png", dpi=200)
     plt.close()
 
-    # 3) scatter: happiness vs std, coloured by n_corpora
-    plt.figure(figsize=(7, 5))
-    sc = plt.scatter(
-        df["happiness_average"],
-        df["happiness_standard_deviation"],
-        c=df["n_corpora"],
-        cmap="viridis",
-        s=10, alpha=0.5,
-    )
-    plt.colorbar(sc, label="# corpora containing the word")
-    plt.title("Rater disagreement vs happiness score\n"
-              "(each point = one labMT word)")
-    plt.xlabel("happiness_average")
-    plt.ylabel("happiness_standard_deviation")
+    # scatter year vs happiness
+    plt.figure(figsize=(9, 4.5))
+    for era in ERA_ORDER:
+        sub = sotu[sotu["era"] == era]
+        plt.scatter(sub["year"], sub["happiness_weighted"],
+                    color=ERA_COLOR[era], s=22, alpha=0.85, label=era)
+    plt.axhline(sotu["happiness_weighted"].mean(), color="black",
+                linestyle="--", linewidth=0.8,
+                label=f"grand mean = {sotu['happiness_weighted'].mean():.3f}")
+    # era boundaries
+    for _, lo, hi in [("", 1860, 1860), ("", 1945, 1945)]:
+        plt.axvline(hi + 0.5, color="grey", linestyle=":", linewidth=0.8)
+    plt.xlabel("year")
+    plt.ylabel("happiness_weighted")
+    plt.title("SOTU happiness over time, 1790-2020")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig(FIG / "scatter_happiness_vs_std.png", dpi=200)
+    plt.savefig(FIG / "sotu_scatter_year_vs_happiness.png", dpi=200)
     plt.close()
 
-    # 4) overlap bar
-    plt.figure(figsize=(6, 4))
-    oc = df["n_corpora"].value_counts().sort_index()
-    plt.bar(oc.index.astype(str), oc.values)
-    for x, y in zip(oc.index.astype(str), oc.values):
-        plt.text(x, y, f"{y}", ha="center", va="bottom", fontsize=9)
-    plt.title("How many labMT words appear in N source corpora?")
-    plt.xlabel("n_corpora (1 = exclusive, 4 = universal)")
-    plt.ylabel("number of words")
+    # coverage distribution
+    plt.figure(figsize=(7, 4))
+    plt.hist(sotu["coverage"], bins=30, color="#6A5ACD")
+    plt.axvline(sotu["coverage"].mean(), linestyle="--", color="black",
+                label=f"mean = {sotu['coverage'].mean():.3f}")
+    plt.axvline(0.10, linestyle=":", color="red",
+                label="robustness cut = 0.10")
+    plt.xlabel("labMT coverage per document  (matched tokens / total tokens)")
+    plt.ylabel("document count")
+    plt.title("How much of each SOTU does labMT see?")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig(FIG / "corpus_overlap_bar.png", dpi=200)
+    plt.savefig(FIG / "sotu_coverage_hist.png", dpi=200)
     plt.close()
 
-    # 5) happiness vs rank, per corpus (small multiples)
-    fig, axes = plt.subplots(2, 2, figsize=(10, 7), sharex=True, sharey=True)
-    for ax, c in zip(axes.flat, CORPORA):
-        sub = df[df[f"in_{c}"]]
-        ax.scatter(sub[f"{c}_rank"], sub["happiness_average"], s=6, alpha=0.4)
-        ax.axhline(5.0, color="red", linestyle=":", linewidth=0.8)
-        ax.set_title(f"{c}  (n={len(sub)})", fontsize=10)
-        ax.set_xlabel(f"{c}_rank (1 = most frequent)")
-        ax.set_ylabel("happiness_average")
-    fig.suptitle("Happiness vs frequency rank, per source corpus")
+    # tokens per doc
+    plt.figure(figsize=(7, 4))
+    plt.hist(sotu["n_tokens"], bins=40, color="#888888")
+    plt.xlabel("n_tokens per document (after simple tokenisation)")
+    plt.ylabel("document count")
+    plt.title("SOTU document length (tokens)")
     plt.tight_layout()
-    plt.savefig(FIG / "happiness_vs_rank_per_corpus.png", dpi=200)
+    plt.savefig(FIG / "sotu_tokens_per_doc.png", dpi=200)
     plt.close()
 
-    print("[desc] wrote tables/ and figures/")
-    print(by_corpus.to_string(index=False))
+    print("[desc] wrote tables and figures")
+    print("\nby era:")
+    print(by_era.to_string(index=False))
+    print("\nby modality:")
+    print(by_mod.to_string(index=False))
+    print(f"\ndocs total: {len(sotu)}, "
+          f"mean coverage: {sotu['coverage'].mean():.3f}, "
+          f"mean tokens/doc: {sotu['n_tokens'].mean():.0f}")
 
 
 if __name__ == "__main__":

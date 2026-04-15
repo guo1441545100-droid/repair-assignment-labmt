@@ -1,0 +1,2 @@
+comparison,n_written,n_spoken,mean_written,mean_spoken,observed_diff,ci_lower,ci_upper,prob_diff_positive
+written − spoken,124,109,5.983465422447856,5.998869769082472,-0.015404346634616317,-0.04407232942937769,0.014046281736666043,0.1523

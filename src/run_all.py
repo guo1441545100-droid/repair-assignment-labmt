@@ -3,18 +3,18 @@ run_all.py
 
 One-command entry point. Runs the whole pipeline end-to-end:
 
-    fetch_data.py          (just checks the raw inputs exist)
-    load_labmt.py          (load + enrich labMT 1.0)
-    descriptive.py         (tables + distribution figures)
-    bootstrap_inference.py (three word-level comparisons)
-    robustness.py          (four filter conditions on Comparison 1)
-    qualitative_exhibit.py (distinctive / anchor word tables)
+    fetch_data.py          (checks raw inputs, downloads SOTU if needed)
+    load_labmt.py          (load + enrich labMT 1.0 lexicon)
+    tokenize_and_score.py  (one row per SOTU with labMT weighted score)
+    descriptive.py         (per-era tables + distribution figures)
+    bootstrap_inference.py (three document-level bootstrap comparisons)
+    robustness.py          (four conditions on the era comparisons)
+    qualitative_exhibit.py (labMT anchor + era-distinctive word tables)
 
-The bottleneck is bootstrap_inference.py (N_BOOT=10,000 resamples per
-cell × three comparisons). The whole pipeline runs in well under a
-minute on my laptop because labMT is only ~10k rows. I have kept
-everything in pandas + numpy + matplotlib so the only hard dependency
-is requirements.txt.
+The bottleneck is bootstrap_inference.py plus robustness.py (together
+roughly 10,000 + 4×5,000 resamples). The whole pipeline runs in under
+90 seconds on my laptop. Dependencies stay in pandas + numpy +
+matplotlib so the only hard requirement is requirements.txt.
 
 Run from the repo root:
     python src/run_all.py
@@ -29,6 +29,7 @@ SRC = Path(__file__).resolve().parent
 STEPS = [
     "fetch_data.py",
     "load_labmt.py",
+    "tokenize_and_score.py",
     "descriptive.py",
     "bootstrap_inference.py",
     "robustness.py",

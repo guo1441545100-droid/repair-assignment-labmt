@@ -1,47 +1,51 @@
 """
 bootstrap_inference.py
 
-Step 4: inferential comparisons, all word-level, all bootstrap.
+Step 5: inferential comparisons. All three are non-parametric
+bootstrap on document-level labMT scores (`happiness_weighted` in
+data/processed/sotu_scored.csv).
 
-The unit of analysis is a single labMT word. The score attached to that
-word is `happiness_average`. The four groups are the four source corpora
-(Twitter, Google Books, NYT, song lyrics). A single word can belong to
-more than one group, this is intrinsic to labMT 1.0, and the analyses
-below account for it differently in each of three comparisons.
+Unit of analysis: one SOTU address. Score: weighted labMT happiness
+with the Δh = 1 neutral-word filter applied at the word level during
+scoring. Inference target: the mean of happiness_weighted inside each
+stratum, and the difference in means between strata.
 
-Comparison 1: pairwise difference in mean happiness between corpora.
-    Six pairs (T-G, T-N, T-L, G-N, G-L, N-L). For each pair I draw
-    bootstrap samples independently from the two corpus word sets
-    (with replacement) and compute the difference in means. This is
-    NOT a paired comparison: words shared between corpora contribute
-    to both marginal samples, which means the two samples are
-    correlated. I treat this as the price of using the corpus-flag
-    column instead of pretending the four sets are disjoint. The
-    alternative (restricting to corpus-exclusive words only) is
-    reported as Comparison 3 below.
+Superpopulation framing: I treat each era as a sample from a larger
+(counterfactual) distribution of "addresses a president of that era
+might have delivered." This is the standard move when you have a full
+enumeration of a closed set and still want uncertainty: bootstrap the
+observed distribution to stand in for that superpopulation. It is not
+the same as sampling presidents, and I will not claim it is.
 
-Comparison 2: frequency bucket × corpus.
-    Inside each corpus I split the 5,000 ranked words into
-    {top-1000, middle 1000–4000, bottom 4000–5000} by rank, and
-    compute the bootstrap difference in mean happiness between the
-    top bucket and the bottom bucket. This tests whether a more
-    frequent word in a given corpus is systematically closer to
-    neutrality, the "neutral common word" effect that Dodds
-    discusses in the 2015 positivity paper.
+Three comparisons:
 
-Comparison 3: corpus-exclusive vs universal words.
-    Group words by n_corpora ∈ {1, 2, 3, 4} and bootstrap the mean
-    happiness within each bucket. This is the "shared words behave
-    differently from exclusive words" check.
+    Comparison 1 - era pairwise
+        Three pairs: (Founding, Industrial), (Founding, Broadcast),
+        (Industrial, Broadcast). Independent bootstrap of the two
+        strata, difference in means, 95% percentile CI, probability
+        that the difference is positive.
+
+    Comparison 2 - modality
+        written (<=1912) vs spoken (>=1913). Two strata, same
+        machinery.
+
+    Comparison 3 - per-era mean happiness with CI
+        One bootstrap mean per era, so the reader can see where each
+        era's mean sits absolutely, not just as a contrast. Also
+        reports the difference between Broadcast and Founding as an
+        across-the-corpus span.
 
 Output:
-    tables/comparison_1_pairwise_corpus.csv
-    tables/comparison_2_frequency_buckets.csv
-    tables/comparison_3_overlap_buckets.csv
+    tables/comparison_1_era_pairwise.csv
+    tables/comparison_2_modality.csv
+    tables/comparison_3_era_means.csv
     tables/readme_fill_in.md
     figures/bootstrap_comparison_1.png
     figures/bootstrap_comparison_2.png
     figures/bootstrap_comparison_3.png
+
+N_BOOT = 10,000, seed fixed to 20260415 (today's date when I froze
+this script).
 """
 
 from itertools import combinations
@@ -56,20 +60,17 @@ PROC = ROOT / "data" / "processed"
 FIG = ROOT / "figures"
 TAB = ROOT / "tables"
 
-IN = PROC / "labmt_clean.csv"
+IN = PROC / "sotu_scored.csv"
 
 N_BOOT = 10_000
-RNG = np.random.default_rng(20260414)  # seed = today's date
-CORPORA = ["twitter", "google", "nyt", "lyrics"]
+RNG = np.random.default_rng(20260415)
 
-# neutral-word filter for the PRIMARY analysis.
-# I apply it at the word level: any word with |h - 5| <= 1 is excluded
-# from the mean calculations below. This matches Dodds et al. (2011).
-DELTA_H = 1.0
-
-
-def apply_filter(df: pd.DataFrame) -> pd.DataFrame:
-    return df[(df["happiness_average"] - 5.0).abs() > DELTA_H].copy()
+ERA_ORDER = ["Founding", "Industrial", "Broadcast"]
+ERA_COLOR = {
+    "Founding":   "#4C72B0",
+    "Industrial": "#DD8452",
+    "Broadcast":  "#55A868",
+}
 
 
 # -----------------------------------------------------------------------------
@@ -101,21 +102,18 @@ def boot_mean(x: np.ndarray) -> tuple[float, float, float]:
 
 
 # -----------------------------------------------------------------------------
-# Comparison 1, pairwise corpus difference (filtered happiness)
+# Comparison 1, era pairwise
 # -----------------------------------------------------------------------------
 
-def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
-    print("\n== Comparison 1: pairwise corpus differences ==")
-    dff = apply_filter(df)
+def comparison_1(df: pd.DataFrame) -> pd.DataFrame:
+    print("\n== Comparison 1: era pairwise differences ==")
     rows = []
-    boot_store: dict[str, tuple[np.ndarray, float, float, float]] = {}
-    for a, b in combinations(CORPORA, 2):
-        xa = dff.loc[dff[f"in_{a}"], "happiness_average"].to_numpy()
-        xb = dff.loc[dff[f"in_{b}"], "happiness_average"].to_numpy()
-        boot, obs, lo, hi, pp = boot_diff(xa, xb)
-        label = f"{a} − {b}"
+    for a, b in combinations(ERA_ORDER, 2):
+        xa = df.loc[df["era"] == a, "happiness_weighted"].dropna().to_numpy()
+        xb = df.loc[df["era"] == b, "happiness_weighted"].dropna().to_numpy()
+        _, obs, lo, hi, pp = boot_diff(xa, xb)
         rows.append({
-            "comparison": label,
+            "comparison": f"{a} − {b}",
             "n_a": int(xa.size),
             "n_b": int(xb.size),
             "mean_a": float(xa.mean()),
@@ -125,13 +123,11 @@ def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
             "ci_upper": hi,
             "prob_diff_positive": pp,
         })
-        boot_store[label] = (boot, obs, lo, hi)
     out = pd.DataFrame(rows)
-    out.to_csv(TAB / "comparison_1_pairwise_corpus.csv", index=False)
+    out.to_csv(TAB / "comparison_1_era_pairwise.csv", index=False)
     print(out.to_string(index=False))
 
-    # Forest plot: observed diff ± CI for each pair
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
     ypos = np.arange(len(rows))[::-1]
     for y, r in zip(ypos, rows):
         xerr = [[r["observed_diff"] - r["ci_lower"]],
@@ -140,57 +136,53 @@ def comparison_1(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
                     capsize=4, color="black")
     ax.axvline(0, color="red", linestyle="--", linewidth=1)
     ax.set_yticks(ypos, [r["comparison"] for r in rows])
-    ax.set_xlabel("Difference in mean happiness (A − B), filtered (Δh=1)")
-    ax.set_title("Comparison 1, pairwise corpus differences")
+    ax.set_xlabel("Difference in mean happiness_weighted (A − B)")
+    ax.set_title("Comparison 1, era pairwise differences (bootstrap 95% CI)")
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_1.png", dpi=200)
     plt.close()
-    return out, boot_store
+    return out
 
 
 # -----------------------------------------------------------------------------
-# Comparison 2, frequency bucket within each corpus
+# Comparison 2, modality (written vs spoken)
 # -----------------------------------------------------------------------------
 
 def comparison_2(df: pd.DataFrame) -> pd.DataFrame:
-    print("\n== Comparison 2: frequency-bucket difference within each corpus ==")
-    dff = apply_filter(df)
-    rows = []
-    for c in CORPORA:
-        rank_col = f"{c}_rank"
-        sub = dff[dff[f"in_{c}"]].copy()
-        # buckets by rank (rank 1 is most frequent)
-        top = sub[sub[rank_col] <= 1000]["happiness_average"].to_numpy()
-        bot = sub[sub[rank_col] > 4000]["happiness_average"].to_numpy()
-        boot, obs, lo, hi, pp = boot_diff(top, bot)
-        rows.append({
-            "corpus": c,
-            "n_top1000": int(top.size),
-            "n_bottom1000": int(bot.size),
-            "mean_top1000": float(top.mean()) if top.size else float("nan"),
-            "mean_bottom1000": float(bot.mean()) if bot.size else float("nan"),
-            "observed_diff": obs,
-            "ci_lower": lo,
-            "ci_upper": hi,
-            "prob_diff_positive": pp,
-        })
-    out = pd.DataFrame(rows)
-    out.to_csv(TAB / "comparison_2_frequency_buckets.csv", index=False)
+    print("\n== Comparison 2: written vs spoken ==")
+    xa = df.loc[df["modality"] == "written", "happiness_weighted"].dropna().to_numpy()
+    xb = df.loc[df["modality"] == "spoken", "happiness_weighted"].dropna().to_numpy()
+    _, obs, lo, hi, pp = boot_diff(xa, xb)
+    row = {
+        "comparison": "written − spoken",
+        "n_written": int(xa.size),
+        "n_spoken": int(xb.size),
+        "mean_written": float(xa.mean()),
+        "mean_spoken": float(xb.mean()),
+        "observed_diff": obs,
+        "ci_lower": lo,
+        "ci_upper": hi,
+        "prob_diff_positive": pp,
+    }
+    out = pd.DataFrame([row])
+    out.to_csv(TAB / "comparison_2_modality.csv", index=False)
     print(out.to_string(index=False))
 
-    # Bar plot: observed top-minus-bottom difference per corpus with CI
-    fig, ax = plt.subplots(figsize=(7, 4))
-    xpos = np.arange(len(rows))
-    diffs = [r["observed_diff"] for r in rows]
-    lows = [r["observed_diff"] - r["ci_lower"] for r in rows]
-    highs = [r["ci_upper"] - r["observed_diff"] for r in rows]
-    ax.bar(xpos, diffs, yerr=[lows, highs], capsize=5,
-           color=["tab:blue", "tab:orange", "tab:green", "tab:red"])
-    ax.axhline(0, color="black", linewidth=0.6)
-    ax.set_xticks(xpos, [r["corpus"] for r in rows])
-    ax.set_ylabel("mean(top-1000) − mean(bottom-1000)\n"
-                  "(happiness, filtered Δh=1)")
-    ax.set_title("Comparison 2, top- vs bottom-ranked words per corpus")
+    # Two half-violins-ish: just a strip + mean marker with CI
+    fig, ax = plt.subplots(figsize=(6.5, 4))
+    for i, (lab, x) in enumerate([("written", xa), ("spoken", xb)]):
+        jitter = RNG.normal(0, 0.04, size=x.size)
+        ax.scatter(np.full_like(x, i) + jitter, x,
+                   alpha=0.5, s=18, color="#888888")
+        m, clo, chi = boot_mean(x)
+        ax.errorbar(i, m, yerr=[[m - clo], [chi - m]], fmt="D",
+                    color="black", capsize=5, markersize=7,
+                    label=f"{lab} mean={m:.3f}")
+    ax.set_xticks([0, 1], ["written (≤1912)", "spoken (≥1913)"])
+    ax.set_ylabel("happiness_weighted (per document)")
+    ax.set_title(f"Comparison 2, written vs spoken. "
+                 f"diff = {obs:+.4f}  "
+                 f"CI = [{lo:+.4f}, {hi:+.4f}]")
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_2.png", dpi=200)
     plt.close()
@@ -198,46 +190,39 @@ def comparison_2(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # -----------------------------------------------------------------------------
-# Comparison 3, overlap-bucket means
+# Comparison 3, per-era mean with CI
 # -----------------------------------------------------------------------------
 
 def comparison_3(df: pd.DataFrame) -> pd.DataFrame:
-    print("\n== Comparison 3: mean happiness by n_corpora (exclusive vs shared) ==")
-    dff = apply_filter(df)
+    print("\n== Comparison 3: per-era mean happiness with CI ==")
     rows = []
-    # labMT 1.0 contains a handful of words (e.g. "b-day", "cupcake",
-    # "x-mas") that are in the scoring table but not in any of the four
-    # rank lists, so n_corpora == 0 for them. I exclude that bucket from
-    # Comparison 3 because it is orthogonal to the corpus comparison.
-    for n in sorted(dff.loc[dff["n_corpora"] >= 1, "n_corpora"].unique()):
-        x = dff.loc[dff["n_corpora"] == n, "happiness_average"].to_numpy()
+    for era in ERA_ORDER:
+        x = df.loc[df["era"] == era, "happiness_weighted"].dropna().to_numpy()
         m, lo, hi = boot_mean(x)
         rows.append({
-            "n_corpora": int(n),
-            "n_words": int(x.size),
+            "era": era,
+            "n_docs": int(x.size),
             "mean_happiness": m,
             "ci_lower": lo,
             "ci_upper": hi,
         })
     out = pd.DataFrame(rows)
-    out.to_csv(TAB / "comparison_3_overlap_buckets.csv", index=False)
+    out.to_csv(TAB / "comparison_3_era_means.csv", index=False)
     print(out.to_string(index=False))
 
-    # Error-bar plot: mean ± CI per overlap bucket
     fig, ax = plt.subplots(figsize=(6.5, 4))
     xpos = np.arange(len(rows))
     means = [r["mean_happiness"] for r in rows]
-    yerr_lo = [r["mean_happiness"] - r["ci_lower"] for r in rows]
-    yerr_hi = [r["ci_upper"] - r["mean_happiness"] for r in rows]
-    ax.errorbar(xpos, means, yerr=[yerr_lo, yerr_hi], fmt="o-",
-                capsize=5, color="tab:purple")
-    ax.axhline(5.0, color="red", linestyle=":", linewidth=0.8,
-               label="scale midpoint (5)")
-    ax.set_xticks(xpos, [str(r["n_corpora"]) for r in rows])
-    ax.set_xlabel("n_corpora (1 = exclusive to one corpus, 4 = universal)")
-    ax.set_ylabel("mean happiness (filtered Δh=1)")
-    ax.set_title("Comparison 3, exclusive vs shared words")
-    ax.legend()
+    lows = [r["mean_happiness"] - r["ci_lower"] for r in rows]
+    highs = [r["ci_upper"] - r["mean_happiness"] for r in rows]
+    colors = [ERA_COLOR[r["era"]] for r in rows]
+    ax.errorbar(xpos, means, yerr=[lows, highs], fmt="o",
+                capsize=6, color="black", ecolor="#444444", zorder=3)
+    for x, m, c in zip(xpos, means, colors):
+        ax.scatter([x], [m], color=c, s=90, zorder=4, edgecolor="black")
+    ax.set_xticks(xpos, [f"{r['era']}\nn={r['n_docs']}" for r in rows])
+    ax.set_ylabel("mean happiness_weighted (95% bootstrap CI)")
+    ax.set_title("Comparison 3, per-era mean happiness")
     plt.tight_layout()
     plt.savefig(FIG / "bootstrap_comparison_3.png", dpi=200)
     plt.close()
@@ -251,10 +236,10 @@ def comparison_3(df: pd.DataFrame) -> pd.DataFrame:
 def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
     lines = ["# README fill-in values",
              "",
-             "Values produced by bootstrap_inference.py. Copy these into",
-             "the [[...]] placeholders in README.md §6.",
+             "Produced by bootstrap_inference.py. Paste these into the",
+             "[[...]] placeholders in README.md §5.",
              ""]
-    lines.append("## Comparison 1, pairwise corpus differences (filtered)")
+    lines.append("## Comparison 1, era pairwise")
     for _, r in c1.iterrows():
         lines.append(
             f"- {r['comparison']}: diff = {r['observed_diff']:+.4f}, "
@@ -263,21 +248,22 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
             f"prob>0 = {r['prob_diff_positive']:.3f}"
         )
     lines.append("")
-    lines.append("## Comparison 2, top-1000 minus bottom-1000 per corpus (filtered)")
+    lines.append("## Comparison 2, written vs spoken")
     for _, r in c2.iterrows():
         lines.append(
-            f"- {r['corpus']}: diff = {r['observed_diff']:+.4f}, "
+            f"- {r['comparison']}: diff = {r['observed_diff']:+.4f}, "
             f"CI = [{r['ci_lower']:+.4f}, {r['ci_upper']:+.4f}], "
-            f"n_top = {int(r['n_top1000'])}, n_bot = {int(r['n_bottom1000'])}"
+            f"mean_written = {r['mean_written']:.4f}, "
+            f"mean_spoken = {r['mean_spoken']:.4f}, "
+            f"n = {int(r['n_written'])}/{int(r['n_spoken'])}"
         )
     lines.append("")
-    lines.append("## Comparison 3, mean happiness by n_corpora (filtered)")
+    lines.append("## Comparison 3, per-era mean happiness")
     for _, r in c3.iterrows():
         lines.append(
-            f"- n_corpora = {int(r['n_corpora'])}: "
-            f"mean = {r['mean_happiness']:.4f}, "
+            f"- {r['era']}: mean = {r['mean_happiness']:.4f}, "
             f"CI = [{r['ci_lower']:.4f}, {r['ci_upper']:.4f}], "
-            f"n_words = {int(r['n_words'])}"
+            f"n_docs = {int(r['n_docs'])}"
         )
     lines.append("")
     (TAB / "readme_fill_in.md").write_text("\n".join(lines), encoding="utf-8")
@@ -286,7 +272,7 @@ def dump_fill_in(c1: pd.DataFrame, c2: pd.DataFrame, c3: pd.DataFrame) -> None:
 
 def main() -> None:
     df = pd.read_csv(IN)
-    c1, _ = comparison_1(df)
+    c1 = comparison_1(df)
     c2 = comparison_2(df)
     c3 = comparison_3(df)
     dump_fill_in(c1, c2, c3)

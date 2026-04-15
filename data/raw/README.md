@@ -1,10 +1,10 @@
 # `data/raw/`
 
-This directory holds exactly one file:
+Two raw inputs live here.
 
-    Data_Set_S1.txt    (labMT 1.0 lexicon, ~400 KB, tab-separated)
+## 1. `Data_Set_S1.txt` (labMT 1.0 lexicon, instrument)
 
-It is the supporting-information file for:
+About 400 KB, tab-separated. This is the supporting-information file for:
 
 > Dodds, P. S., Harris, K. D., Kloumann, I. M., Bliss, C. A., &
 > Danforth, C. M. (2011). Temporal Patterns of Happiness and
@@ -12,25 +12,16 @@ It is the supporting-information file for:
 > *PLoS ONE*, 6(12), e26752.
 > <https://doi.org/10.1371/journal.pone.0026752>
 
-I am not redistributing it inside this repo because it is a PLoS
-supporting-information file and the cleanest thing to do is point at
-the original. To obtain it:
+Not redistributed in this repo because it is a PLoS supporting-information file and the cleanest thing to do is point at the original. To obtain it:
 
 1. Open <https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026752>
 2. Scroll to the **Supporting Information** section at the bottom.
 3. Download **Data Set S1** (a `.txt` file, about 360 KB).
-4. Put it at `data/raw/Data_Set_S1.txt` (rename if your browser adds
-   a suffix).
+4. Put it at `data/raw/Data_Set_S1.txt` (rename if your browser adds a suffix).
 
-After the file is in place, run `python src/fetch_data.py` to
-confirm the check passes, then `python src/run_all.py` to run the
-whole pipeline.
+### File layout (as I read it)
 
-## File layout (as I read it)
-
-The file has three metadata lines at the top (skipped in
-`load_labmt.py` via `skiprows=3`) and then a tab-separated table with
-these columns:
+Three metadata lines at the top (skipped in `load_labmt.py` via `skiprows=3`) and then a tab-separated table with these columns:
 
     word
     happiness_rank
@@ -41,11 +32,36 @@ these columns:
     nyt_rank
     lyrics_rank
 
-Missing rank entries are the literal string `--`, which `load_labmt.py`
-treats as NaN via `na_values=["--"]`.
+Missing rank entries are the literal string `--`, which `load_labmt.py` treats as NaN via `na_values=["--"]`.
 
-## Citation
+## 2. `sotu/*.txt` (State of the Union corpus, 1790-2019)
 
-Please cite Dodds et al. (2011), see the full reference above, if
-you use this file for anything beyond reproducing the repair
-assignment.
+233 plain-text files, one per address, downloaded automatically by `src/fetch_data.py` from the public GitHub repository `martin-martin/sotu-speeches`, which mirrors the canonical texts. The files are US federal government speech, public domain.
+
+File naming convention, as-is from upstream:
+
+    {president_slug}-{month}_{day}-{year}.txt
+
+For example:
+
+    abraham_lincoln-december_1-1862.txt
+    donald_j._trump-february_5-2019.txt
+
+Each file begins with three lines that the upstream project prepends (president name, date, blank line). `src/tokenize_and_score.py` strips that preamble in `strip_preamble()` so the preamble words do not contaminate the labMT score.
+
+### If you are offline
+
+If `src/fetch_data.py` cannot reach GitHub, download the `speeches/` directory from <https://github.com/martin-martin/sotu-speeches> manually and drop every `.txt` into `data/raw/sotu/`. The scorer only cares that the files are in that directory with the expected filename pattern.
+
+## Run order
+
+After both raw inputs are in place:
+
+```bash
+python src/fetch_data.py          # verifies labMT + SOTU
+python src/run_all.py             # runs the whole pipeline end to end
+```
+
+## Citations
+
+Cite Dodds et al. (2011) if you use the lexicon for anything beyond reproducing this repair. The SOTU texts are public domain but credit upstream by linking to the `martin-martin/sotu-speeches` repository if you redistribute them.
