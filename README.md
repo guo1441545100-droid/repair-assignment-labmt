@@ -1,7 +1,7 @@
 # Four corpora, one lexicon: what labMT 1.0 itself says about Twitter, Google Books, the NYT, and song lyrics
 
 **Course:** Culture to the Humanities — Repair Assignment (individual submission)
-**Author:** [student name]
+**Author:** Junyi Guo
 **Date:** April 2026
 **Base dataset:** `Data_Set_S1.txt` (Dodds et al. 2011, PLoS ONE — the labMT 1.0 lexicon supplied with the course readings).
 
