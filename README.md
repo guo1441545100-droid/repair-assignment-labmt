@@ -1,9 +1,13 @@
 # Happier broadcasts? Scoring 233 US State of the Union addresses with labMT 1.0
 
 **Course:** Culture to the Humanities, Repair Assignment (individual submission)
+
 **Author:** Junyi Guo
+
 **Date:** April 2026
+
 **Instrument:** `Data_Set_S1.txt`, the labMT 1.0 lexicon from Dodds et al. (2011), PLoS ONE, attached to the course readings.
+
 **Corpus:** every US presidential State of the Union address from 1790 to 2019 (n = 233), public-domain full text, mirrored from `martin-martin/sotu-speeches`.
 
 ---
