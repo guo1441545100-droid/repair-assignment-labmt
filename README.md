@@ -1,6 +1,6 @@
 # Happier broadcasts? Scoring 233 US State of the Union addresses with labMT 1.0
 
-**Course:** Culture to the Humanities, Repair Assignment (individual submission)
+**Course:** Coding the Humanities, Repair Assignment (individual submission)
 
 **Author:** Junyi Guo
 
