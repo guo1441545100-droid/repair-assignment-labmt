@@ -49,9 +49,9 @@ labMT is a dictionary-based sentiment instrument, which means every score rests 
 1. **Whose words count.** The lexicon was built from the top 5,000 most frequent words in four specific early-2010s English corpora (Twitter, Google Books, NYT, song lyrics). Words that a 1790s Federalist or a 1930s socialist would use but those four corpora would not, are simply not in the instrument. When I score an 1808 Jefferson address, I am measuring what Jefferson said using a ruler that a 2011 MTurk rater calibrated on a Kanye West track.
 2. **Whose affect counts.** Each happiness score is the mean of 50 Amazon Mechanical Turk raters scoring the word on a 1–9 scale with no context. The number 5.983 for a Founding-era address is therefore a weighted average over the subset of Jefferson's vocabulary that also appeared in a 2010s attention economy, judged by raters who were not told what any of these words meant in 1808.
 
-Neither of those is a defect. They are the conditions under which the instrument can be used at all. The humanities question is what an **era-level contrast** between labMT scores can legitimately claim. My position in this repair is narrow: the contrast is a measurement of **how the vocabulary of a text overlaps with a specific 2010s affective dictionary**, and not a measurement of the "mood" or "optimism" of the presidency in any deep sense. I come back to this in §10 ("trust / refuse / improve").
+Neither of those is a defect. They are the conditions under which the instrument can be used at all. The humanities question is what an **era-level contrast** between labMT scores can legitimately claim. My position in this repair is narrow: the contrast is a measurement of **how the vocabulary of a text overlaps with a specific 2010s affective dictionary**, and not a measurement of the "mood" or "optimism" of the presidency in any deep sense. I come back to this in §9 ("trust / refuse / improve").
 
-The reason era-boundary choice is a humanities move, not a statistical one, is that any boundary is a claim about periodisation. I chose 1860 because the Civil War reorganised what a union address *was*; I chose 1945 because postwar broadcasting reorganised who a president was talking to. A reader who prefers 1898 (Spanish–American war) or 1932 (New Deal) would be making a different humanities argument and the numbers would change accordingly. The robustness section (§7) does not re-draw the boundaries because re-drawing them would produce a different research question, not a sensitivity check on this one.
+The reason era-boundary choice is a humanities move, not a statistical one, is that any boundary is a claim about periodisation. I chose 1860 because the Civil War reorganised what a union address *was*; I chose 1945 because postwar broadcasting reorganised who a president was talking to. A reader who prefers 1898 (Spanish–American war) or 1932 (New Deal) would be making a different humanities argument and the numbers would change accordingly. The robustness section (§6) does not re-draw the boundaries because re-drawing them would produce a different research question, not a sensitivity check on this one.
 
 ---
 
@@ -101,7 +101,7 @@ Per-era summary, from `tables/desc_sotu_by_era.csv` and `tables/desc_sotu_covera
 
 *Figure 3.3.1 — Corpus at a glance. (a) Per-document `happiness_weighted` over time, with era background bands and per-era mean lines; the Broadcast-era mean line sits visibly above the other two, and the Founding era shows the widest within-era dispersion. (b) Density of `happiness_weighted` by era, histogram plus a smoothed overlay: the Industrial bell sits slightly left of the Founding bell, and the Broadcast bell is shifted right of both. (c) labMT coverage over time, with the 0.18 cut used by condition D in §6; coverage drifts upward from ~0.18 in the Founding era to ~0.29 in the Broadcast era, which is the confound I make explicit in §4.2. (d) Document length in tokens, log y-axis: the 19th-century written annual reports are an order of magnitude longer than the 20th-century spoken addresses, which is a second threat to between-era comparison that any coverage-only analysis would miss.*
 
-Three things to notice before the inference section. First, **mean coverage climbs from 18.1% in the Founding era to 29.2% in the Broadcast era**. labMT 1.0, built on 2010s corpora, sees more of a 1990s State of the Union than it sees of an 1820s State of the Union. This is not surprising but it is the single biggest threat to an era comparison, and I pick it up again in §7 (condition D). Second, **the within-era SDs are all small** (≈ 0.10), so a difference of 0.05 on the 1–9 scale is visible once you do inference on 70+ documents. Third, **Broadcast looks highest already in the raw means** (6.03 vs ≈ 5.97 for the other two eras). That is the claim the bootstrap is going to check.
+Three things to notice before the inference section. First, **mean coverage climbs from 18.1% in the Founding era to 29.2% in the Broadcast era**. labMT 1.0, built on 2010s corpora, sees more of a 1990s State of the Union than it sees of an 1820s State of the Union. This is not surprising but it is the single biggest threat to an era comparison, and I pick it up again in §6 (condition D). Second, **the within-era SDs are all small** (≈ 0.10), so a difference of 0.05 on the 1–9 scale is visible once you do inference on 70+ documents. Third, **Broadcast looks highest already in the raw means** (6.03 vs ≈ 5.97 for the other two eras). That is the claim the bootstrap is going to check.
 
 Modality summary, from `tables/desc_sotu_by_modality.csv`:
 
@@ -189,7 +189,7 @@ Because a 95% CI bar gives a reader almost no information about the **shape** of
 
 ![C1 — all three era-pair bootstrap difference distributions](figures/density_c1_all_pairs.png)
 
-*Figure 5.1.1 — The whole of C1 on one figure. Each panel is the bootstrap distribution of one era-pair difference in mean `happiness_weighted`, with a Silverman-bandwidth Gaussian KDE, the 95% percentile CI filled, the observed difference (black dashed) marked, and the red zero line. The inline annotation box reports the CI, P(diff > 0), and the two strata sizes. Reading top to bottom: Founding − Industrial straddles zero (no signal), Founding − Broadcast is left of zero but its right tail nearly touches zero (fragile signal — the one condition D dissolves), Industrial − Broadcast sits cleanly left of zero with no density near it (robust signal).*
+*Figure 5.1.1 — The whole of C1 on one figure. Each panel is the bootstrap distribution of one era-pair difference in mean `happiness_weighted`, with a Silverman-bandwidth Gaussian KDE, the 95% percentile CI filled, the observed difference (black dashed) marked, and the red zero line. The inline annotation box reports the CI, P(diff > 0), and the two strata sizes. Reading top to bottom: Founding − Industrial straddles zero (no signal), Founding − Broadcast is left of zero but its right tail nearly touches zero (fragile signal, the one condition D dissolves), Industrial − Broadcast sits cleanly left of zero with no density near it (robust signal).*
 
 ![Industrial − Broadcast bootstrap distribution](figures/density_diff_industrial_broadcast.png)
 
@@ -197,7 +197,7 @@ Because a 95% CI bar gives a reader almost no information about the **shape** of
 
 ![Founding − Broadcast bootstrap distribution](figures/density_diff_founding_broadcast.png)
 
-*Figure 5.1.3 — Founding − Broadcast, the borderline case. The CI upper bound is −0.008 under the baseline, so the red zero line barely clears the right tail. This is exactly the contrast that moves under the coverage cut in §6 — a reminder that an 0.05 CI exclusion in a single analysis is not the same thing as a robust finding.*
+*Figure 5.1.3 — Founding − Broadcast, the borderline case. The CI upper bound is −0.008 under the baseline, so the red zero line barely clears the right tail. This is exactly the contrast that moves under the coverage cut in §6, which is a reminder that a 0.05 CI exclusion in a single analysis is not the same thing as a robust finding.*
 
 ![Founding − Industrial bootstrap distribution](figures/density_diff_founding_industrial.png)
 
@@ -215,7 +215,7 @@ Written and spoken addresses are statistically indistinguishable. This is the po
 
 ![C2 — written vs spoken bootstrap distributions and per-doc strip](figures/density_written_vs_spoken.png)
 
-*Figure 5.2.1 — C2, written vs spoken. Panel (a) overlays the two bootstrapped mean distributions; the written (blue) and spoken (red) KDEs sit almost on top of each other, which is the visual form of "indistinguishable." Panel (b) is the per-document strip view: every address is one dot, jittered horizontally, with a bootstrap 95% CI diamond in black above the column. Both the per-document clouds and the CI diamonds show the same story — the delivery-mode cut is not doing the work. Compare the barely-moved CI diamonds here against the forest panel in Figure 5.3.1 below, where the Broadcast era clearly peels off from the other two: that is what a real contrast looks like in this same plotting format, and written-vs-spoken does not look like it.*
+*Figure 5.2.1 — C2, written vs spoken. Panel (a) overlays the two bootstrapped mean distributions; the written (blue) and spoken (red) KDEs sit almost on top of each other, which is the visual form of "indistinguishable." Panel (b) is the per-document strip view: every address is one dot, jittered horizontally, with a bootstrap 95% CI diamond in black above the column. Both the per-document clouds and the CI diamonds show the same story, the delivery-mode cut is not doing the work. Compare the barely-moved CI diamonds here against the forest panel in Figure 5.3.1 below, where the Broadcast era clearly peels off from the other two. That is what a real contrast looks like in this same plotting format, and written-vs-spoken does not look like it.*
 
 ### 5.3 Comparison 3, per-era mean happiness with CI
 
@@ -248,7 +248,7 @@ The three CIs overlap partially but Broadcast sits cleanly above Industrial. On 
 
 ![Robustness panel — forest, trajectory, D-zoom, and per-era n](figures/robustness_forest.png)
 
-*Figure 6.1 — Robustness of the three era-pair differences under four conditions. (a) Forest view: four conditions × three pairs, 95% CIs, red zero line. (b) Trajectory: for each pair, the observed difference plotted across conditions A→B→C→D with the CI band shaded, so a reader can see how far a contrast moves when a measurement choice changes. The Industrial − Broadcast green line stays below zero in all four conditions; the Founding − Broadcast blue line moves noticeably under condition D and its band crosses zero; the Founding − Industrial orange line bounces around zero — the sign literally flips between conditions, which is the definition of a non-finding. (c) The condition-D zoom: baseline square vs D diamond for each pair on the same axis, with an inline label saying whether D crosses zero. Only Founding − Broadcast crosses. (d) Per-era document counts under the 0.18 cut: Founding drops from 72 to 30, Industrial from 84 to 51, Broadcast stays at 77. The coverage cut is therefore doing structural work — it is not a cosmetic robustness check.*
+*Figure 6.1 — Robustness of the three era-pair differences under four conditions. (a) Forest view: four conditions × three pairs, 95% CIs, red zero line. (b) Trajectory: for each pair, the observed difference plotted across conditions A→B→C→D with the CI band shaded, so a reader can see how far a contrast moves when a measurement choice changes. The Industrial − Broadcast green line stays below zero in all four conditions; the Founding − Broadcast blue line moves noticeably under condition D and its band crosses zero; the Founding − Industrial orange line bounces around zero, the sign literally flips between conditions, which is the definition of a non-finding. (c) The condition-D zoom: baseline square vs D diamond for each pair on the same axis, with an inline label saying whether D crosses zero. Only Founding − Broadcast crosses. (d) Per-era document counts under the 0.18 cut: Founding drops from 72 to 30, Industrial from 84 to 51, Broadcast stays at 77. The coverage cut is therefore doing structural work, not a cosmetic robustness check.*
 
 What holds:
 
@@ -280,7 +280,7 @@ Five words per category, from `tables/anchor_exhibit.csv`:
 
 ![labMT anchor exhibit — very positive, very negative, contested, near-neutral](figures/anchor_exhibit.png)
 
-*Figure 7.1.1 — labMT anchor exhibit. Four columns, one per anchor category. The positive anchors are uncontroversial and modern. The negative anchors are dominated by post-9/11 threat vocabulary (`terrorist`, `terrorism`), which is already a hint that a Broadcast-era effect could be driven by the presence or absence of a small number of high-weight words. The contested column is profanity with huge rater disagreement (std ≥ 2.3 on a 1-9 scale), and the near-neutral column catches non-English tokens that slipped into the MTurk task (`ainda`, `maar`, `sua` are Portuguese/Dutch) — a small but honest flaw in the instrument that a reader of this repair should see before trusting any 4th-decimal number later on.*
+*Figure 7.1.1 — labMT anchor exhibit. Four columns, one per anchor category. The positive anchors are uncontroversial and modern. The negative anchors are dominated by post-9/11 threat vocabulary (`terrorist`, `terrorism`), which is already a hint that a Broadcast-era effect could be driven by the presence or absence of a small number of high-weight words. The contested column is profanity with huge rater disagreement (std ≥ 2.3 on a 1-9 scale), and the near-neutral column catches non-English tokens that slipped into the MTurk task (`ainda`, `maar`, `sua` are Portuguese/Dutch), which is a small but honest flaw in the instrument that a reader of this repair should see before trusting any 4th-decimal number later on.*
 
 ### 7.2 Era-distinctive words
 
@@ -294,7 +294,7 @@ For each era I compute per-word frequency (per 1000 tokens), intersect with labM
 
 ![Era-distinctive words grid — happy and sad top-N per era](figures/era_distinctive_grid.png)
 
-*Figure 7.2.1 — Era-distinctive top words. The grid has three rows (Founding, Industrial, Broadcast) and two columns (happy-distinctive, sad-distinctive). "Distinctive" means the word's frequency per 1000 tokens in that era minus the maximum of its frequencies in the two other eras, so the bars literally measure "extra use in this era that is not matched anywhere else in the corpus." This is the panel I built the §7.2 reading around. The Founding-era happy column is dominated by the words of Constitution-building (`united`, `citizens`, `constitution`, `treaty`, `power`), the Founding-era sad column catches the 19th-century register of fiscal and military trouble (`debt`, `execution`, `hostile`, `late`). The Broadcast-distinctive happy vocabulary is heavier on the "civic-positive" register and labMT rates those words high. The bump is a real shift in the surface vocabulary that presidents started using after WWII — exactly the kind of thing a hedonometer is supposed to pick up, and exactly the kind of thing a humanities reader should not read as "the presidency got happier."*
+*Figure 7.2.1 — Era-distinctive top words. The grid has three rows (Founding, Industrial, Broadcast) and two columns (happy-distinctive, sad-distinctive). "Distinctive" means the word's frequency per 1000 tokens in that era minus the maximum of its frequencies in the two other eras, so the bars literally measure "extra use in this era that is not matched anywhere else in the corpus." This is the panel I built the §7.2 reading around. The Founding-era happy column is dominated by the words of Constitution-building (`united`, `citizens`, `constitution`, `treaty`, `power`), the Founding-era sad column catches the 19th-century register of fiscal and military trouble (`debt`, `execution`, `hostile`, `late`). The Broadcast-distinctive happy vocabulary is heavier on the "civic-positive" register and labMT rates those words high. The bump is a real shift in the surface vocabulary that presidents started using after WWII, which is exactly the kind of thing a hedonometer is supposed to pick up, and exactly the kind of thing a humanities reader should not read as "the presidency got happier."*
 
 ---
 
@@ -373,26 +373,7 @@ Paragraph-level disclosure is in `AI_LOG.md`. Short version: the research questi
 
 ---
 
-## 13. Submission checklist
-
-A short list so the grader can confirm at a glance that this repair meets the rubric.
-
-- [x] Different corpus from the group project (SOTU, 1790-2019, n = 233; original attempt was IMDb)
-- [x] Explicit research question with sub-questions C1 / C2 / C3 (§1)
-- [x] Humanities argument for the era boundaries (§2)
-- [x] Data provenance and data dictionary (§3.1, §3.2)
-- [x] Descriptive overview with per-era tables and four-panel corpus figure (§3.3)
-- [x] Measurement section: tokeniser, filter, coverage, superpopulation framing (§4)
-- [x] Inference: 10,000-replicate bootstrap for C1, C2, C3 with 95% percentile CIs (§5)
-- [x] Robustness check on C1 under four conditions including the coverage cut (§6)
-- [x] Qualitative exhibits: labMT anchors + era-distinctive words (§7)
-- [x] Six named limitations and a trust/refuse/improve reading (§8, §9)
-- [x] AI disclosure at paragraph level (`AI_LOG.md`)
-- [x] Full pipeline reproducible from `python src/run_all.py`
-
----
-
-## 14. Bibliography
+## 13. Bibliography
 
 - Dodds, P. S., Harris, K. D., Kloumann, I. M., Bliss, C. A., & Danforth, C. M. (2011). Temporal Patterns of Happiness and Information in a Global Social Network: Hedonometrics and Twitter. *PLoS ONE*, 6(12), e26752.
 - martin-martin/sotu-speeches. (n.d.). State-of-the-Union speeches in TXT format. GitHub. <https://github.com/martin-martin/sotu-speeches>
