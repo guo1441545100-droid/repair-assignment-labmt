@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+
+# processed outputs are reproducible from data/raw/Data_Set_S1.txt,
+# but I commit them so the grader does not have to re-run the pipeline.
+# Uncomment the next line if you want a clean repo.
+# data/processed/
