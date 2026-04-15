@@ -159,7 +159,13 @@ def main() -> None:
     out = pd.DataFrame(all_rows)
     out.to_csv(TAB / "robustness_comparison_1.csv", index=False)
 
-    # forest plot
+    # =================================================================
+    # Figure: 2x2 rich robustness panel
+    #   (a) forest plot: four conditions x three era pairs
+    #   (b) per-condition trajectory: how does each pair move A->B->C->D
+    #   (c) condition D impact: baseline vs D CI overlay per pair
+    #   (d) dropped-docs summary for condition D
+    # =================================================================
     pairs = [f"{a} − {b}" for a, b in combinations(ERA_ORDER, 2)]
     conditions = [
         "A baseline (Δh=1, full corpus)",
@@ -167,29 +173,120 @@ def main() -> None:
         "C broader filter (Δh=0.5)",
         "D drop coverage < 0.18",
     ]
-    colors = ["black", "tab:blue", "tab:orange", "tab:green"]
+    cond_short = ["A", "B", "C", "D"]
+    colors = ["#222222", "#4C72B0", "#DD8452", "#C44E52"]
     offsets = [-0.27, -0.09, 0.09, 0.27]
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    fig = plt.figure(figsize=(14, 9))
+    gs = fig.add_gridspec(2, 2, hspace=0.38, wspace=0.28)
+
+    # (a) forest
+    ax_fr = fig.add_subplot(gs[0, 0])
     ypos_base = np.arange(len(pairs))[::-1]
     for cond, color, off in zip(conditions, colors, offsets):
         sub = out[out["condition"] == cond]
         for y, pair in zip(ypos_base, pairs):
             row = sub[sub["pair"] == pair].iloc[0]
-            ax.errorbar(
+            ax_fr.errorbar(
                 row["observed_diff"], y + off,
                 xerr=[[row["observed_diff"] - row["ci_lower"]],
                       [row["ci_upper"] - row["observed_diff"]]],
-                fmt="o", capsize=3, color=color,
+                fmt="o", capsize=3, color=color, markersize=7,
+                markeredgecolor="white", elinewidth=1.6,
                 label=cond if pair == pairs[0] else None,
             )
-    ax.axvline(0, color="red", linestyle="--", linewidth=1)
-    ax.set_yticks(ypos_base, pairs)
-    ax.set_xlabel("Difference in mean happiness_weighted (A − B) with 95% CI")
-    ax.set_title("Robustness of era pairwise comparisons (four conditions)")
-    ax.legend(fontsize=8, loc="lower right")
-    plt.tight_layout()
-    plt.savefig(FIG / "robustness_forest.png", dpi=200)
+    ax_fr.axvline(0, color="red", linestyle="--", linewidth=1)
+    ax_fr.set_yticks(ypos_base, pairs)
+    ax_fr.set_xlabel("Difference in mean happiness_weighted with 95% CI")
+    ax_fr.set_title("(a) Forest: four conditions × three era pairs")
+    ax_fr.legend(fontsize=7, loc="lower right", framealpha=0.92)
+    ax_fr.grid(axis="x", alpha=0.25)
+
+    # (b) per-pair trajectory across conditions
+    ax_tr = fig.add_subplot(gs[0, 1])
+    pair_colors = {
+        pairs[0]: "#4C72B0",
+        pairs[1]: "#DD8452",
+        pairs[2]: "#55A868",
+    }
+    xs = np.arange(len(conditions))
+    for pair in pairs:
+        sub = out[out["pair"] == pair].set_index("condition").loc[conditions]
+        ax_tr.plot(xs, sub["observed_diff"].values, "o-",
+                   color=pair_colors[pair], linewidth=2, markersize=8,
+                   markeredgecolor="white", label=pair, zorder=3)
+        ax_tr.fill_between(xs,
+                           sub["ci_lower"].values,
+                           sub["ci_upper"].values,
+                           color=pair_colors[pair], alpha=0.15)
+    ax_tr.axhline(0, color="red", linestyle="--", linewidth=1)
+    ax_tr.set_xticks(xs, cond_short)
+    ax_tr.set_xlabel("condition")
+    ax_tr.set_ylabel("observed diff (with 95% CI band)")
+    ax_tr.set_title("(b) Trajectory across conditions — does any pair cross zero?")
+    ax_tr.legend(fontsize=8, loc="upper right")
+    ax_tr.grid(alpha=0.25)
+
+    # (c) condition D zoom: baseline vs D for each pair
+    ax_d = fig.add_subplot(gs[1, 0])
+    ypos = np.arange(len(pairs))[::-1]
+    for y, pair in zip(ypos, pairs):
+        base = out[(out["pair"] == pair) &
+                   (out["condition"] == conditions[0])].iloc[0]
+        dcut = out[(out["pair"] == pair) &
+                   (out["condition"] == conditions[3])].iloc[0]
+        ax_d.errorbar(base["observed_diff"], y + 0.15,
+                      xerr=[[base["observed_diff"] - base["ci_lower"]],
+                            [base["ci_upper"] - base["observed_diff"]]],
+                      fmt="s", color="#222222", markersize=10, capsize=5,
+                      elinewidth=1.8, markeredgecolor="white",
+                      label="A baseline" if y == ypos[0] else None)
+        ax_d.errorbar(dcut["observed_diff"], y - 0.15,
+                      xerr=[[dcut["observed_diff"] - dcut["ci_lower"]],
+                            [dcut["ci_upper"] - dcut["observed_diff"]]],
+                      fmt="D", color="#C44E52", markersize=10, capsize=5,
+                      elinewidth=1.8, markeredgecolor="white",
+                      label="D coverage ≥ 0.18" if y == ypos[0] else None)
+        crosses = "crosses 0" if dcut["ci_lower"] < 0 < dcut["ci_upper"] else "stays"
+        ax_d.text(max(base["ci_upper"], dcut["ci_upper"]) + 0.004, y,
+                  f"  D {crosses}", va="center", fontsize=8,
+                  color="#C44E52" if crosses == "crosses 0" else "#222222")
+    ax_d.axvline(0, color="red", linestyle="--", linewidth=1)
+    ax_d.set_yticks(ypos, pairs)
+    ax_d.set_xlabel("difference in mean happiness_weighted")
+    ax_d.set_title("(c) The coverage-cut result: which pair moves?")
+    ax_d.legend(fontsize=8, loc="lower right")
+    ax_d.grid(axis="x", alpha=0.25)
+
+    # (d) per-era document counts under condition D
+    ax_n = fig.add_subplot(gs[1, 1])
+    era_colors_map = {"Founding": "#4C72B0", "Industrial": "#DD8452",
+                      "Broadcast": "#55A868"}
+    n_base = [int((baseline["era"] == e).sum()) for e in ERA_ORDER]
+    n_d = [int(((df_d["era"] == e)).sum()) for e in ERA_ORDER]
+    xb = np.arange(len(ERA_ORDER))
+    w = 0.36
+    bars1 = ax_n.bar(xb - w / 2, n_base, w, color=[era_colors_map[e] for e in ERA_ORDER],
+                     alpha=0.55, edgecolor="black", label="A baseline")
+    bars2 = ax_n.bar(xb + w / 2, n_d, w, color=[era_colors_map[e] for e in ERA_ORDER],
+                     alpha=1.0, edgecolor="black", hatch="//",
+                     label="D coverage ≥ 0.18")
+    for b, v in zip(bars1, n_base):
+        ax_n.text(b.get_x() + b.get_width() / 2, v + 1, str(v),
+                  ha="center", fontsize=9)
+    for b, v in zip(bars2, n_d):
+        ax_n.text(b.get_x() + b.get_width() / 2, v + 1, str(v),
+                  ha="center", fontsize=9, fontweight="bold")
+    ax_n.set_xticks(xb, ERA_ORDER)
+    ax_n.set_ylabel("n documents")
+    ax_n.set_title("(d) Condition D drops most of the Founding-era n")
+    ax_n.legend(fontsize=8, loc="upper left")
+    ax_n.grid(axis="y", alpha=0.25)
+
+    fig.suptitle("Robustness of Comparison 1 (era pairwise differences) "
+                 "under four measurement conditions",
+                 fontsize=13, y=1.0)
+    plt.savefig(FIG / "robustness_forest.png", dpi=200, bbox_inches="tight")
     plt.close()
 
     print(f"[save] {TAB / 'robustness_comparison_1.csv'}")

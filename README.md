@@ -89,6 +89,10 @@ Per-era summary, from `tables/desc_sotu_by_era.csv` and `tables/desc_sotu_covera
 | Industrial | 84 | 1902.6 | 0.196 | 5.9622 | 0.0956 | 5.9637 |
 | Broadcast  | 77 | 1982.1 | 0.292 | 6.0288 | 0.1117 | 6.0317 |
 
+![Corpus at a glance: four-panel overview of the 233 SOTU addresses](figures/corpus_at_a_glance.png)
+
+*Figure 3.3.1 — Corpus at a glance. (a) Per-document `happiness_weighted` over time, with era background bands and per-era mean lines; the Broadcast-era mean line sits visibly above the other two, and the Founding era shows the widest within-era dispersion. (b) Density of `happiness_weighted` by era, histogram plus a smoothed overlay: the Industrial bell sits slightly left of the Founding bell, and the Broadcast bell is shifted right of both. (c) labMT coverage over time, with the 0.18 cut used by condition D in §6; coverage drifts upward from ~0.18 in the Founding era to ~0.29 in the Broadcast era, which is the confound I make explicit in §4.2. (d) Document length in tokens, log y-axis: the 19th-century written annual reports are an order of magnitude longer than the 20th-century spoken addresses, which is a second threat to between-era comparison that any coverage-only analysis would miss.*
+
 Three things to notice before the inference section. First, **mean coverage climbs from 18.1% in the Founding era to 29.2% in the Broadcast era**. labMT 1.0, built on 2010s corpora, sees more of a 1990s State of the Union than it sees of an 1820s State of the Union. This is not surprising but it is the single biggest threat to an era comparison, and I pick it up again in §7 (condition D). Second, **the within-era SDs are all small** (≈ 0.10), so a difference of 0.05 on the 1–9 scale is visible once you do inference on 70+ documents. Third, **Broadcast looks highest already in the raw means** (6.03 vs ≈ 5.97 for the other two eras). That is the claim the bootstrap is going to check.
 
 Modality summary, from `tables/desc_sotu_by_modality.csv`:
@@ -98,7 +102,15 @@ Modality summary, from `tables/desc_sotu_by_modality.csv`:
 | written (≤1912) | 124 | 5.9835 | 0.1107 |
 | spoken  (≥1913) | 109 | 5.9989 | 0.1189 |
 
-The raw means are nearly identical. This already tells me C2 is unlikely to move — the delivery-mode story is not doing the work — but I bootstrap it anyway because "unlikely to move" is not a published CI.
+The raw means are nearly identical. This already tells me C2 is unlikely to move, the delivery-mode story is not doing the work, but I bootstrap it anyway because "unlikely to move" is not a published CI.
+
+![SOTU happiness distribution by era, 233 documents](figures/sotu_hist_happiness_by_era.png)
+
+*Figure 3.3.2 — Per-document `happiness_weighted` by era, density histogram with a smoothed overlay and per-era mean (dashed line). The legend shows n, mean, and SD. Founding (blue) and Industrial (orange) are visibly close. The Broadcast (green) distribution is shifted right and slightly narrower. This is the same picture §5 will confirm with the bootstrap, but at the per-document level rather than the bootstrap-of-mean level.*
+
+![Coverage vs happiness scatter](figures/coverage_vs_happiness.png)
+
+*Figure 3.3.3 — The coverage confound in one picture. Each dot is one SOTU address. The x axis is labMT coverage, the y axis is `happiness_weighted`. The red dotted line at 0.18 is the robustness cut used in §6. Notice that the Broadcast (green) cloud is concentrated in the high-coverage region (x > 0.22) and the Founding (blue) cloud is concentrated in the low-coverage region (x < 0.20). This is why condition D is the robustness check that matters: if coverage and era are correlated, a coverage cut is the only way to ask whether the era effect is a coverage effect in disguise.*
 
 ---
 
@@ -161,15 +173,23 @@ Reading:
 
 One sentence version: the headline effect is not a three-level gradient, it is a **Broadcast-era bump**. The first 155 years of the presidency look statistically flat on this measure and then post-1946 addresses sit noticeably higher.
 
-Because a 95% CI bar gives a reader almost no information about the **shape** of the bootstrap distribution (how certain, how skewed, how much overlap between strata), I also plot the full distribution of the 10,000 resampled statistics for each comparison. See `figures/bootstrap_comparison_1.png` for the forest view and the four panels below for the analytical view.
+Because a 95% CI bar gives a reader almost no information about the **shape** of the bootstrap distribution (how certain, how skewed, how much overlap between strata), I also plot the full distribution of the 10,000 resampled statistics for each comparison.
 
-**`figures/density_c1_all_pairs.png`** overlays the three C1 difference distributions on a single axis. Industrial − Broadcast (green) sits cleanly left of the red zero line, Founding − Broadcast (blue) sits mostly left of zero but with its right tail touching it, and Founding − Industrial (orange) is centred near zero. This is the "one picture of the whole C1 result" panel.
+![C1 — all three era-pair bootstrap difference distributions](figures/density_c1_all_pairs.png)
 
-**`figures/density_diff_industrial_broadcast.png`** is the Industrial − Broadcast contrast alone. The distribution is smooth, roughly symmetric, and zero is clearly in the right tail. P(diff > 0) ≈ 0.0001, which is the number I trust most in this repair.
+*Figure 5.1.1 — The whole of C1 on one figure. Each panel is the bootstrap distribution of one era-pair difference in mean `happiness_weighted`, with a Silverman-bandwidth Gaussian KDE, the 95% percentile CI filled, the observed difference (black dashed) marked, and the red zero line. The inline annotation box reports the CI, P(diff > 0), and the two strata sizes. Reading top to bottom: Founding − Industrial straddles zero (no signal), Founding − Broadcast is left of zero but its right tail nearly touches zero (fragile signal — the one condition D dissolves), Industrial − Broadcast sits cleanly left of zero with no density near it (robust signal).*
 
-**`figures/density_diff_founding_broadcast.png`** is the borderline case. The distribution sits left of zero but the right tail clips zero, which matches the CI upper bound of −0.008. Under the primary analysis this is a signal; under condition D in §6 it dissolves.
+![Industrial − Broadcast bootstrap distribution](figures/density_diff_industrial_broadcast.png)
 
-**`figures/density_diff_founding_industrial.png`** is the negative result, and the shape makes the point better than the CI does. The distribution straddles zero symmetrically, with the observed value (+0.021) sitting well inside the bulk. No amount of narrative can make this a finding.
+*Figure 5.1.2 — Industrial − Broadcast, the contrast I trust most. 10,000 bootstrap replicates, smoothed via KDE, with the 95% percentile band shaded. The distribution is smooth, roughly symmetric, and the red zero line sits far in the right tail. `P(diff > 0) ≈ 0.0001`. Under all four robustness conditions in §6, this contrast stays significant and negative.*
+
+![Founding − Broadcast bootstrap distribution](figures/density_diff_founding_broadcast.png)
+
+*Figure 5.1.3 — Founding − Broadcast, the borderline case. The CI upper bound is −0.008 under the baseline, so the red zero line barely clears the right tail. This is exactly the contrast that moves under the coverage cut in §6 — a reminder that an 0.05 CI exclusion in a single analysis is not the same thing as a robust finding.*
+
+![Founding − Industrial bootstrap distribution](figures/density_diff_founding_industrial.png)
+
+*Figure 5.1.4 — Founding − Industrial, the null result. The observed difference (+0.021) sits inside the bulk of the bootstrap distribution, which straddles zero almost symmetrically. The shape makes the point better than the CI alone does: this is noise.*
 
 ### 5.2 Comparison 2, written vs spoken
 
@@ -181,7 +201,9 @@ Because a 95% CI bar gives a reader almost no information about the **shape** of
 
 Written and spoken addresses are statistically indistinguishable. This is the point at which the obvious alternative explanation for the C1 effect ("maybe the Broadcast bump is really a delivery-mode bump") is ruled out: the Wilson-era 1913 cut does not track the effect. Whatever is happening is happening 33 years later and is not about pronunciation.
 
-**`figures/density_written_vs_spoken.png`** overlays the two bootstrapped mean distributions. The written and spoken KDEs sit almost on top of each other, which is the visual form of "indistinguishable." Compare against `figures/density_era_means.png` below, where the Broadcast KDE clearly peels off from the other two — that is what a real contrast looks like in this same plotting format, and the written/spoken contrast does not look like it.
+![C2 — written vs spoken bootstrap distributions and per-doc strip](figures/density_written_vs_spoken.png)
+
+*Figure 5.2.1 — C2, written vs spoken. Panel (a) overlays the two bootstrapped mean distributions; the written (blue) and spoken (red) KDEs sit almost on top of each other, which is the visual form of "indistinguishable." Panel (b) is the per-document strip view: every address is one dot, jittered horizontally, with a bootstrap 95% CI diamond in black above the column. Both the per-document clouds and the CI diamonds show the same story — the delivery-mode cut is not doing the work. Compare the barely-moved CI diamonds here against the forest panel in Figure 5.3.1 below, where the Broadcast era clearly peels off from the other two: that is what a real contrast looks like in this same plotting format, and written-vs-spoken does not look like it.*
 
 ### 5.3 Comparison 3, per-era mean happiness with CI
 
@@ -195,7 +217,9 @@ Written and spoken addresses are statistically indistinguishable. This is the po
 
 The three CIs overlap partially but Broadcast sits cleanly above Industrial. On the 1–9 labMT scale, the full range across the corpus means is about 0.07, which is small in absolute terms and large relative to the within-era SDs.
 
-**`figures/density_era_means.png`** plots the full bootstrap distribution of the mean for each era on a single axis, using a histogram plus a Silverman-bandwidth Gaussian KDE per stratum. Founding (blue) and Industrial (orange) overlap almost completely. Broadcast (green) is shifted right, with only its left shoulder touching the Founding/Industrial bulk. This is the same story the CI table tells, but in the form the reference high-scoring projects use: the width of each bell is the uncertainty on that era's mean, and the overlap between bells is the strength of the contrast. The Broadcast bell does not overlap the Industrial bell at all in the central mass, which is what "robustly different" actually looks like on this plot style.
+![C3 — per-era bootstrap means, overlay + forest + ridgeline](figures/density_era_means.png)
+
+*Figure 5.3.1 — C3, per-era mean happiness under a 10,000-replicate bootstrap, shown three ways. (a) Overlapping bootstrap distributions: histogram plus Silverman-bandwidth Gaussian KDE, with the 95% percentile band shaded and the mean drawn as a dashed vertical. Founding (blue) and Industrial (orange) overlap almost completely; Broadcast (green) is shifted right with only its left shoulder touching the Industrial bulk. (b) Forest view: the same three means on a single horizontal axis with 95% CI whiskers, grand mean dashed. The Broadcast CI does not overlap the Industrial CI. (c) Ridgeline view: the three bootstrap distributions stacked, each normalised to a fixed height with its mean and CI marked beneath it. The ridgeline is there specifically because it is the view under which overlap between bells reads as the strength of the contrast; the Broadcast bell has almost no central overlap with Industrial, and that is what a robust contrast looks like on this plot style.*
 
 ---
 
@@ -210,7 +234,9 @@ The three CIs overlap partially but Broadcast sits cleanly above Industrial. On 
 | C broader filter (Δh = 0.5)    | +0.010 [−0.012, +0.032], p>0 = 0.83 | −0.063 [−0.088, −0.039], p>0 = 0.00 | **−0.074 [−0.094, −0.053], p>0 = 0.00** |
 | D coverage ≥ 0.18 (n = 30/51/77) | +0.063 [+0.001, +0.124], p>0 = 0.98 | **−0.031 [−0.091, +0.028], p>0 = 0.15** | **−0.094 [−0.130, −0.058], p>0 = 0.00** |
 
-See `figures/robustness_forest.png`.
+![Robustness panel — forest, trajectory, D-zoom, and per-era n](figures/robustness_forest.png)
+
+*Figure 6.1 — Robustness of the three era-pair differences under four conditions. (a) Forest view: four conditions × three pairs, 95% CIs, red zero line. (b) Trajectory: for each pair, the observed difference plotted across conditions A→B→C→D with the CI band shaded, so a reader can see how far a contrast moves when a measurement choice changes. The Industrial − Broadcast green line stays below zero in all four conditions; the Founding − Broadcast blue line moves noticeably under condition D and its band crosses zero; the Founding − Industrial orange line bounces around zero — the sign literally flips between conditions, which is the definition of a non-finding. (c) The condition-D zoom: baseline square vs D diamond for each pair on the same axis, with an inline label saying whether D crosses zero. Only Founding − Broadcast crosses. (d) Per-era document counts under the 0.18 cut: Founding drops from 72 to 30, Industrial from 84 to 51, Broadcast stays at 77. The coverage cut is therefore doing structural work — it is not a cosmetic robustness check.*
 
 What holds:
 
@@ -240,7 +266,9 @@ Five words per category, from `tables/anchor_exhibit.csv`:
 | contested (std ≥ 2.3) | fucking (4.64), fuckin (3.86), fucked (3.56), pussy (4.80), whiskey (5.72) |
 | near-neutral (|h−5| ≤ 0.2) | ainda (4.92), s (5.04), maar (4.90), sua (4.92), its (4.96) |
 
-Three things this exhibit makes explicit. The positive anchors are uncontroversial and modern. The negative anchors are dominated by **post-9/11 threat vocabulary** (`terrorist`, `terrorism`), which is already a hint that a Broadcast-era effect could be driven by the presence or absence of a small number of high-weight words. The contested words are profanity with huge rater disagreement, and the near-neutral column catches **non-English tokens** that slipped into the MTurk task (`ainda`, `maar`, `sua` are Portuguese/Dutch), which is a small but honest flaw in the instrument. See `figures/anchor_exhibit.png`.
+![labMT anchor exhibit — very positive, very negative, contested, near-neutral](figures/anchor_exhibit.png)
+
+*Figure 7.1.1 — labMT anchor exhibit. Four columns, one per anchor category. The positive anchors are uncontroversial and modern. The negative anchors are dominated by post-9/11 threat vocabulary (`terrorist`, `terrorism`), which is already a hint that a Broadcast-era effect could be driven by the presence or absence of a small number of high-weight words. The contested column is profanity with huge rater disagreement (std ≥ 2.3 on a 1-9 scale), and the near-neutral column catches non-English tokens that slipped into the MTurk task (`ainda`, `maar`, `sua` are Portuguese/Dutch) — a small but honest flaw in the instrument that a reader of this repair should see before trusting any 4th-decimal number later on.*
 
 ### 7.2 Era-distinctive words
 
@@ -252,7 +280,9 @@ For each era I compute per-word frequency (per 1000 tokens), intersect with labM
 | Industrial | see `era_distinctive_words.csv` | see `era_distinctive_words.csv` |
 | Broadcast  | see `era_distinctive_words.csv` | see `era_distinctive_words.csv` |
 
-What this tells me about the Broadcast bump: the Broadcast-distinctive happy vocabulary is heavier on the "civic-positive" register (look at `era_distinctive_words.csv` for the full list) than the Industrial-distinctive one, and labMT rates those civic-positive words high. The bump is not a measurement error. It is a real shift in the surface vocabulary that presidents started using after WWII, which is exactly the kind of thing a hedonometer is supposed to pick up, and exactly the kind of thing a humanities reader should not read as "the presidency got happier." See `figures/era_distinctive_grid.png`.
+![Era-distinctive words grid — happy and sad top-N per era](figures/era_distinctive_grid.png)
+
+*Figure 7.2.1 — Era-distinctive top words. The grid has three rows (Founding, Industrial, Broadcast) and two columns (happy-distinctive, sad-distinctive). "Distinctive" means the word's frequency per 1000 tokens in that era minus the maximum of its frequencies in the two other eras, so the bars literally measure "extra use in this era that is not matched anywhere else in the corpus." This is the panel I built the §7.2 reading around. The Founding-era happy column is dominated by the words of Constitution-building (`united`, `citizens`, `constitution`, `treaty`, `power`), the Founding-era sad column catches the 19th-century register of fiscal and military trouble (`debt`, `execution`, `hostile`, `late`). The Broadcast-distinctive happy vocabulary is heavier on the "civic-positive" register and labMT rates those words high. The bump is a real shift in the surface vocabulary that presidents started using after WWII — exactly the kind of thing a hedonometer is supposed to pick up, and exactly the kind of thing a humanities reader should not read as "the presidency got happier."*
 
 ---
 
