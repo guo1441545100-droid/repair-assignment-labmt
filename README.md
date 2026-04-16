@@ -67,6 +67,10 @@ The reason era-boundary choice is a humanities move, not a statistical one, is t
 
 **SOTU corpus.** 233 `.txt` files under `data/raw/sotu/`, one per address, 1790 Washington through 2019 Trump. File naming `{president_slug}-{month}_{day}-{year}.txt`. Downloaded by `src/fetch_data.py` from the `martin-martin/sotu-speeches` GitHub repository, which mirrors the canonical public-domain texts from stateoftheunion.onetwothree. Every file is US federal government speech and therefore public domain.
 
+### 3.1.1 Ethics and data-sourcing note
+
+The labMT 1.0 lexicon is the course-assigned instrument, distributed as supporting information to Dodds et al. (2011) under the PLoS ONE open-access licence. I use it as-is and do not redistribute a modified version in this repo. The SOTU corpus is not from the course materials; I chose it independently as a replacement for the IMDb corpus used in the group project. The texts are works of the US federal government and are in the public domain under 17 U.S.C. §105, so there are no copyright or licence restrictions on downloading, storing, or analysing them. There are no privacy or informed-consent concerns: every text is a public address delivered by a sitting president and published in the Congressional Record. No individual other than the president is identifiable from the data, and I do not attempt to make psychological claims about any individual president. The upstream mirror (`martin-martin/sotu-speeches`) is a convenience copy, not the authoritative source; the authoritative transcripts are held by the American Presidency Project at UC Santa Barbara. I rely on the mirror because it provides clean plain-text files in a single directory, but a reader who wants to verify provenance can cross-check any file against the APP website. Finally, I note that labMT's own crowd-sourced ratings were collected via Amazon Mechanical Turk, and I have no way to audit the working conditions or pay of those 50 raters per word. This is a limitation of using any instrument built on crowd labour, and it applies equally to ANEW, VADER, and every other MTurk-derived lexicon in the field.
+
 ### 3.2 Data dictionary, post-scoring
 
 After `src/tokenize_and_score.py` runs, the repo contains `data/processed/sotu_scored.csv` with one row per address and the columns below.
@@ -151,6 +155,13 @@ over matched tokens (types weighted by corpus frequency). I also store the unwei
 For every document I report `coverage = n_matched_tokens / n_tokens`. A score of 0.29 means 29% of the document's tokens are matched by the filtered labMT vocabulary, the other 71% are either out-of-vocabulary (OOV) or in the Δh=1 neutral band. Coverage is written into the CSV for every row, plotted in `figures/sotu_coverage_hist.png`, and used as the cut for condition D in `src/robustness.py`.
 
 I do not treat low-coverage documents as invalid. I treat them as a threat to between-era comparison, because if coverage varies systematically by era, then the **instrument itself** is reading earlier and later speeches with different sensitivity. The robustness section makes this threat concrete by re-running the comparisons with a minimum-coverage cut.
+
+To make the OOV pattern concrete, here are the most frequent OOV tokens per era (words that appear often in the corpus but are not in labMT at all):
+
+- **Founding-era OOV:** `intercourse` (246 occurrences, used in the diplomatic sense "commercial intercourse with foreign nations"), `expenditures` (240), `appropriations` (195), `navigation` (167), `heretofore` (139), `militia` (115), `tariff` (108), `specie` (87). These are the fiscal and legal terms of 19th-century governance. labMT, built on Twitter and Google Books circa 2010, simply does not contain them.
+- **Broadcast-era OOV:** `expenditures` (209), `strengthen` (196), `aggression` (123), `terrorists` (122), `bipartisan` (109), `funding` (86), `incentives` (77), `deficits` (69). The Broadcast-era misses are policy jargon and post-Cold-War security vocabulary.
+
+The pattern matters because these OOV words are not random. They are the era-specific vocabulary that labMT cannot score, which means the instrument is systematically blind to the most era-distinctive language in the corpus. Coverage is not just "how much labMT sees"; it is "what labMT does not see, and whether that gap is correlated with the variable of interest." In this case it is.
 
 ### 4.3 Inference: superpopulation bootstrap
 
