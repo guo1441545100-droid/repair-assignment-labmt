@@ -64,7 +64,7 @@ The reason era-boundary choice is a humanities move, not a statistical one, is t
 
 10,222 word rows. `data/raw/README.md` has the exact retrieval steps.
 
-**SOTU corpus.** 233 `.txt` files under `data/raw/sotu/`, one per address, 1790 Washington through 2019 Trump. File naming `{president_slug}-{month}_{day}-{year}.txt`. Downloaded by `src/fetch_data.py` from the `martin-martin/sotu-speeches` GitHub repository, which mirrors the canonical public-domain texts from stateoftheunion.onetwothree. Every file is US federal government speech and therefore public domain.
+**SOTU corpus.** 233 `.txt` files under `data/raw/sotu/`, one per address, 1790 Washington through 2019 Trump. File naming `{president_slug}-{month}_{day}-{year}.txt`. Downloaded by `src/fetch_data.py` from the `martin-martin/sotu-speeches` GitHub repository, which mirrors the canonical public domain texts from stateoftheunion.onetwothree. Every file is US federal government speech and therefore public domain.
 
 ### 3.1.1 Ethics and data-sourcing note
 
