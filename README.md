@@ -1,4 +1,5 @@
 # Measuring emotional tone in 233 US State of the Union addresses with labMT 1.0
+
 **Course:** Coding the Humanities, Repair Assignment
 
 **Author:** Junyi Guo
