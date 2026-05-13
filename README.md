@@ -286,7 +286,7 @@ Five words per category, from `tables/anchor_exhibit.csv`:
 | very positive (h ≥ 7.5, low SD) | laughter (8.50), happiness (8.44), love (8.42), happy (8.30), laughed (8.26) |
 | very negative (h ≤ 2.5, low SD) | terrorist (1.30), suicide (1.30), rape (1.44), terrorism (1.48), murder (1.48) |
 | contested (std ≥ 2.3) | fucking (4.64), fuckin (3.86), fucked (3.56), pussy (4.80), whiskey (5.72) |
-| near-neutral (|h−5| ≤ 0.2) | ainda (4.92), s (5.04), maar (4.90), sua (4.92), its (4.96) |
+| near-neutral (\|h−5\| ≤ 0.2) | ainda (4.92), s (5.04), maar (4.90), sua (4.92), its (4.96) |
 
 ![labMT anchor exhibit — very positive, very negative, contested, near-neutral](figures/anchor_exhibit.png)
 
