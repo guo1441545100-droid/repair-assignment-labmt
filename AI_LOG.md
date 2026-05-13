@@ -110,3 +110,4 @@ I did not take Claude's output on trust. After every round of AI-assisted edits 
 - A few Claude suggestions were rejected because they did not match the evidence: an early proposed phrasing that called the Broadcast effect "clearly real" was cut, and a suggested filter on grammatical fillers in the qualitative exhibit was rejected for the reason given above.
 
 The pipeline as it stands is one I can run, defend, and explain.
+
